@@ -312,7 +312,7 @@ export default function RevisarOrden() {
             {(mode === 'pago_movil' || mode === 'punto' || mode === 'transferencia' || mode === 'biopago' || mode === 'zelle') && (
               <div className="mt-4 space-y-3">
                 {mode === 'pago_movil' && (
-                  <div className="rounded-2xl bg-violet-50 text-violet-900 p-3.5 text-sm">
+                  <div className="rounded-2xl bg-orange-50 text-orange-900 p-3.5 text-sm">
                     <p className="font-bold mb-1">Datos para el Pago Móvil</p>
                     <p>{s.pagoMovil.bank}</p>
                     <p className="tabular">

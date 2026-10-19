@@ -26,11 +26,11 @@ export const unitShort: Record<SellUnit, string> = { unidad: 'c/u', kg: 'kg', m:
 export const PAYMENT_INFO: Record<PaymentMethod, { label: string; hint: string; color: string; bs: boolean }> = {
   efectivo_usd: { label: 'Efectivo $', hint: 'Dólares en caja', color: '#2f9e6e', bs: false },
   efectivo_bs: { label: 'Efectivo Bs', hint: 'Bolívares en caja', color: '#0ea5a4', bs: true },
-  pago_movil: { label: 'Pago Móvil', hint: 'Transferencia al teléfono', color: '#7c3aed', bs: true },
+  pago_movil: { label: 'Pago Móvil', hint: 'Transferencia al teléfono', color: '#ea580c', bs: true },
   punto: { label: 'Punto de venta', hint: 'Tarjeta de débito', color: '#2563eb', bs: true },
   zelle: { label: 'Zelle', hint: 'Transferencia en $', color: '#6d28d9', bs: false },
   biopago: { label: 'Biopago', hint: 'Huella BDV', color: '#dc2626', bs: true },
-  transferencia: { label: 'Transferencia', hint: 'Bancaria en Bs', color: '#0891b2', bs: true },
+  transferencia: { label: 'Transferencia', hint: 'Bancaria en Bs', color: '#475569', bs: true },
   fiado: { label: 'Fiado', hint: 'Cuenta del cliente', color: '#c026d3', bs: false },
 }
 

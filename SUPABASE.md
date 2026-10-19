@@ -31,9 +31,21 @@ Si en algún momento lo ejecutas antes del paso 2, crea el usuario y vuelve a ej
 
 ## 4. Variables en Vercel
 
-El archivo `.env` del repositorio ya trae la URL y la clave **publishable**. Vercel las toma solas al construir.
+La URL y la clave de Supabase no están en el repositorio: se configuran en Vercel.
 
-La clave **secret** (`sb_secret_…`) **nunca** va en la app ni en el repositorio. Si alguna vez se compartió, cámbiala en **Project Settings → API Keys**.
+1. Entra a [vercel.com](https://vercel.com) → tu proyecto → **Settings → Environment Variables**.
+2. Agrega estas dos, marcando **Production**, **Preview** y **Development**:
+
+   | Key | Value |
+   | --- | --- |
+   | `VITE_SUPABASE_URL` | la Project URL de Supabase (`https://….supabase.co`) |
+   | `VITE_SUPABASE_PUBLISHABLE_KEY` | la clave que empieza con `sb_publishable_` |
+
+3. Ve a **Deployments**, abre el último, toca **⋯ → Redeploy**. Las variables solo se aplican en una publicación nueva.
+
+Si al abrir la app no aparece la pantalla de TuBodega para entrar con usuario y clave, faltan las variables o no se volvió a publicar.
+
+**Nunca** pongas la clave secreta (`sb_secret_…`) en Vercel ni en el repositorio: todo lo que empieza con `VITE_` queda dentro de la app y cualquiera lo puede ver.
 
 ## 5. Probar
 
