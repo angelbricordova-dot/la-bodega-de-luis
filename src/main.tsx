@@ -1,0 +1,21 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { registerSW } from 'virtual:pwa-register'
+import App from './App'
+import { seedIfEmpty } from './lib/seed'
+import './index.css'
+
+registerSW({ immediate: true })
+
+navigator.storage?.persist?.().catch(() => {})
+
+seedIfEmpty().finally(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>,
+  )
+})

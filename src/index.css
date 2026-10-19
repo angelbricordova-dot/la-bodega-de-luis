@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #ecf8f2;
+  --color-brand-100: #d3efe1;
+  --color-brand-200: #a9dfc4;
+  --color-brand-300: #74c9a2;
+  --color-brand-400: #45b080;
+  --color-brand-500: #2f9e6e;
+  --color-brand-600: #227f58;
+  --color-brand-700: #1d6548;
+  --color-ink: #17201c;
+  --color-muted: #6b7a73;
+  --color-line: #e5ebe8;
+  --color-surface: #ffffff;
+  --color-canvas: #f4f7f5;
+  --color-fiado: #b62fc9;
+  --color-quote: #5b4fe0;
+}
+
+:root {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+button { cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+input, textarea, select { font-size: 16px; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+@keyframes sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes toast-in { from { transform: translateY(-12px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes scan-line { 0%,100% { transform: translateY(-36px); } 50% { transform: translateY(36px); } }
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+.animate-sheet { animation: sheet-in .28s cubic-bezier(.2,.9,.3,1); }
+.animate-fade { animation: fade-in .2s ease-out; }
+.animate-toast { animation: toast-in .22s cubic-bezier(.2,.9,.3,1); }
+.animate-scan { animation: scan-line 2.2s ease-in-out infinite; }
+.animate-pop { animation: pop .25s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet, .animate-fade, .animate-toast, .animate-scan, .animate-pop { animation: none; }
+}
