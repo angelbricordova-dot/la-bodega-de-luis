@@ -2,6 +2,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import { BottomNav } from './components/Layout'
 import { PickerHost } from './components/AddProductSheet'
 import { ConfirmHost, Toaster } from './components/ui'
+import { CloudSync, LicenseBanner } from './components/CloudSync'
 import Venta from './pages/Venta'
 import Catalogo from './pages/Catalogo'
 import Inventario from './pages/Inventario'
@@ -17,6 +18,7 @@ export default function App() {
   const { pathname } = useLocation()
   return (
     <>
+      {MAIN.includes(pathname) && <LicenseBanner />}
       <Routes>
         <Route path="/" element={<Venta />} />
         <Route path="/catalogo" element={<Catalogo />} />
@@ -30,6 +32,7 @@ export default function App() {
         <Route path="*" element={<Venta />} />
       </Routes>
       {MAIN.includes(pathname) && <BottomNav />}
+      <CloudSync />
       <PickerHost />
       <ConfirmHost />
       <Toaster />

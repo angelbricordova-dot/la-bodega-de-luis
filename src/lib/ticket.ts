@@ -83,6 +83,7 @@ export async function buildEscPos(doc: Doc, s: Settings): Promise<Uint8Array> {
   p.line(sep).align('center')
   if (s.business.footer) p.line(s.business.footer)
   p.line('Documento sin valor fiscal')
+  p.line('Sistema: TuBodega')
   p.cut()
   return p.encode()
 }
@@ -131,7 +132,7 @@ export function buildHtml(doc: Doc, s: Settings) {
   ${s.business.phone ? `<div>Tel: ${esc(s.business.phone)}</div>` : ''}
 </div>
 <pre>${esc([...out, ...extra].join('\n'))}</pre>
-<div style="text-align:center">${esc(s.business.footer)}<br>Documento sin valor fiscal</div>`
+<div style="text-align:center">${esc(s.business.footer)}<br>Documento sin valor fiscal<br>Sistema: TuBodega</div>`
 }
 
 /** Imprime en una ventana de impresión del sistema (útil con RawBT o impresoras USB/WiFi) */

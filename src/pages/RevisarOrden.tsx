@@ -13,6 +13,7 @@ import { PAYMENT_INFO, bs, parseNum, round2, toBs, usd } from '../lib/money'
 import { createQuote, createSale } from '../lib/sales'
 import { printDoc, shareWhatsApp, buildEscPos } from '../lib/ticket'
 import { printerStatus, sendToPrinter } from '../lib/bluetooth'
+import { useLicenseState } from '../lib/account'
 
 const ICONS: Record<PaymentMethod, typeof Banknote> = {
   efectivo_usd: Banknote,
@@ -34,6 +35,8 @@ interface MixRow {
 export default function RevisarOrden() {
   const nav = useNavigate()
   const s = useSettings()
+  const lic = useLicenseState()
+  const locked = !!lic && !lic.canSell
   const cart = useCart()
   const totals = cartTotals(cart)
   const [tab, setTab] = useState<'venta' | 'cotizacion'>('venta')
@@ -380,7 +383,7 @@ export default function RevisarOrden() {
 
       <div className="fixed inset-x-0 bottom-0 z-30 bg-surface/95 backdrop-blur border-t border-line pb-safe">
         <div className="max-w-lg mx-auto px-4 py-3">
-          <Button size="lg" className="w-full" disabled={busy || (tab === 'venta' && !valid)} onClick={confirm}>
+          <Button size="lg" className="w-full" disabled={locked || busy || (tab === 'venta' && !valid)} onClick={confirm}>
             {tab === 'venta' ? (
               <>
                 <Printer size={19} /> Confirmar venta y emitir ticket
@@ -391,7 +394,12 @@ export default function RevisarOrden() {
               </>
             )}
           </Button>
-          <p className="text-[11px] text-muted text-center mt-1.5">
+          {locked && (
+            <button onClick={() => nav('/ajustes/plan')} className="w-full text-[12px] font-semibold text-red-600 text-center mt-1.5 underline">
+              {lic!.message} Toca para reportar tu pago.
+            </button>
+          )}
+          <p className={cx('text-[11px] text-muted text-center mt-1.5', locked && 'hidden')}>
             {tab === 'venta' ? (s.printing.autoPrint ? 'Se imprime solo si hay impresora conectada' : 'Podrás imprimir o enviar el ticket') : `Válida por ${s.quoteValidityDays} días`}
           </p>
         </div>

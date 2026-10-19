@@ -13,9 +13,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'La Bodega de Luis',
-        short_name: 'Bodega',
-        description: 'Punto de venta e inventario para bodegas',
+        name: 'TuBodega',
+        short_name: 'TuBodega',
+        description: 'Ventas, inventario y fiados de tu bodega en el teléfono',
         theme_color: '#2f9e6e',
         background_color: '#f6f8f7',
         display: 'standalone',

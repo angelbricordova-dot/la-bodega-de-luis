@@ -1,5 +1,10 @@
 import { db, getSettings, type LineItem, type Payment, type PaymentMethod, type Quote, type Sale } from '../db'
 import { round2 } from './money'
+import { canSellNow } from './account'
+
+function assertCanSell() {
+  if (!canSellNow()) throw new Error('Tu plan no está al día. Reporta tu pago en Ajustes → Mi plan.')
+}
 
 async function moveStock(items: LineItem[], sign: 1 | -1, type: 'venta' | 'anulacion', note: string) {
   const now = Date.now()
@@ -28,6 +33,7 @@ export interface NewSale {
 }
 
 export async function createSale(input: NewSale): Promise<Sale> {
+  assertCanSell()
   return db.transaction('rw', db.tables, async () => {
     const s = await getSettings()
     const customer = input.customerId ? await db.customers.get(input.customerId) : undefined
@@ -69,6 +75,7 @@ export async function voidSale(sale: Sale) {
 }
 
 export async function createQuote(input: Omit<Quote, 'id' | 'number' | 'createdAt' | 'validUntil' | 'rate' | 'status' | 'customerName'>) {
+  assertCanSell()
   return db.transaction('rw', db.settings, db.quotes, db.customers, async () => {
     const s = await getSettings()
     const customer = input.customerId ? await db.customers.get(input.customerId) : undefined

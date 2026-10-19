@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Briefcase, CreditCard, FolderTree, HardDrive, Headphones, LineChart, Printer, Settings, ShieldCheck, ShoppingBasket, UserCog, Users, Vault } from 'lucide-react'
+import { BadgeCheck, Briefcase, CreditCard, FolderTree, HardDrive, Headphones, LineChart, Printer, Settings, ShieldCheck, ShoppingBasket, UserCog, Users, Vault } from 'lucide-react'
 import { Page, PageHeader } from '../../components/Layout'
 import { Button, Input } from '../../components/ui'
 import { useSettings } from '../../lib/hooks'
@@ -16,8 +16,11 @@ import Caja from './Caja'
 import Avanzado from './Avanzado'
 import Admin from './Admin'
 import Soporte from './Soporte'
+import MiPlan from './MiPlan'
+import { cloudEnabled } from '../../lib/cloud'
 
 const SECTIONS: { key: string; label: string; icon: typeof Settings; color: string; el: () => ReactNode; protect?: boolean }[] = [
+  ...(cloudEnabled ? [{ key: 'plan', label: 'Mi plan', icon: BadgeCheck, color: '#2f9e6e', el: () => <MiPlan /> }] : []),
   { key: 'negocio', label: 'Negocio', icon: Briefcase, color: '#2f9e6e', el: () => <Negocio /> },
   { key: 'pagos', label: 'Pagos y tasa', icon: CreditCard, color: '#7c3aed', el: () => <Pagos /> },
   { key: 'impresion', label: 'Impresión', icon: Printer, color: '#db2777', el: () => <Impresion /> },
@@ -88,7 +91,7 @@ export default function Ajustes() {
             </button>
           ))}
         </div>
-        <p className="text-center text-xs text-muted mt-8">La Bodega de Luis · v1.0 · Tus datos se guardan en este teléfono</p>
+        <p className="text-center text-xs text-muted mt-8">TuBodega · v1.1 · Tus datos se guardan en este teléfono</p>
       </Page>
     </>
   )

@@ -226,8 +226,8 @@ class BodegaDB extends Dexie {
   expenses!: Table<Expense, number>
   settings!: Table<Settings, string>
 
-  constructor() {
-    super('bodega')
+  constructor(name: string) {
+    super(name)
     this.version(1).stores({
       products: '++id, name, barcode, categoryId',
       categories: '++id, name',
@@ -245,15 +245,47 @@ class BodegaDB extends Dexie {
   }
 }
 
-export const db = new BodegaDB()
+/** Base de datos local de la bodega abierta. Cada cuenta tiene la suya en el teléfono. */
+export let db = new BodegaDB('bodega')
+
+const DIRTY_KEY = 'tubodega-dirty'
+
+/** Abre la base de datos de una cuenta y marca cambios para el respaldo en la nube */
+export function openDb(name: string) {
+  if (db.name !== name) {
+    db.close()
+    db = new BodegaDB(name)
+  }
+  const mark = () => {
+    try {
+      localStorage.setItem(DIRTY_KEY, String(Date.now()))
+    } catch {
+      /* sin almacenamiento */
+    }
+  }
+  for (const t of db.tables) {
+    t.hook('creating', mark)
+    t.hook('updating', mark)
+    t.hook('deleting', mark)
+  }
+  return db
+}
+
+export function lastLocalChange() {
+  try {
+    return Number(localStorage.getItem(DIRTY_KEY) || 0)
+  } catch {
+    return 0
+  }
+}
 
 export const DEFAULT_SETTINGS: Settings = {
   id: 'main',
   business: {
-    name: 'La Bodega de Luis',
-    rif: 'J-00000000-0',
-    address: 'Calle principal, local 1',
-    phone: '0412-0000000',
+    name: 'Mi Bodega',
+    rif: '',
+    address: '',
+    phone: '',
     footer: '¡Gracias por su compra!',
   },
   rate: 36.5,

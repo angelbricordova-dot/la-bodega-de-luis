@@ -75,7 +75,10 @@ export async function seedIfEmpty() {
 export async function loadDemoData() {
   await db.transaction('rw', db.tables, async () => {
     for (const t of db.tables) await t.clear()
-    await db.settings.put({ ...DEFAULT_SETTINGS })
+    await db.settings.put({
+      ...DEFAULT_SETTINGS,
+      business: { ...DEFAULT_SETTINGS.business, name: 'Bodega de Prueba', rif: 'J-12345678-9', address: 'Calle principal, local 1', phone: '0412-0000000' },
+    })
     const catIds = (await db.categories.bulkAdd(CATEGORIES, { allKeys: true })) as number[]
     const now = Date.now()
     await db.products.bulkAdd(
@@ -101,6 +104,23 @@ export async function loadDemoData() {
     await db.sellers.add({ name: 'Luis', active: true })
     await db.settings.update('main', { currentSeller: 'Luis' })
   })
+}
+
+/** Primera vez que una bodega real abre la app en este teléfono: sin productos de ejemplo */
+export async function initStoreDb(business: { name: string; rif?: string | null; address?: string | null; phone?: string | null }) {
+  if (await db.settings.get('main')) return false
+  await db.settings.put({
+    ...DEFAULT_SETTINGS,
+    business: {
+      ...DEFAULT_SETTINGS.business,
+      name: business.name,
+      rif: business.rif ?? '',
+      address: business.address ?? '',
+      phone: business.phone ?? '',
+    },
+  })
+  await db.categories.bulkAdd(CATEGORIES)
+  return true
 }
 
 export async function wipeAll() {

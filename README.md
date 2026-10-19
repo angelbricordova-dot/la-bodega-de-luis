@@ -1,6 +1,8 @@
-# La Bodega de Luis — Punto de venta
+# TuBodega — Punto de venta para bodegas
 
-App de punto de venta e inventario para bodegas en Venezuela. Funciona en el teléfono como una app instalada (PWA), **sin internet**, y guarda todo en el propio teléfono.
+App de punto de venta e inventario para bodegas en Venezuela, con cuentas por bodega, licencias mensuales y panel de administrador. **Para ponerla en marcha con Supabase, sigue [SUPABASE.md](SUPABASE.md).**
+
+La app Funciona en el teléfono como una app instalada (PWA), **sin internet**, y guarda todo en el propio teléfono.
 
 ## Qué hace
 

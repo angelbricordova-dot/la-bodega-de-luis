@@ -1,6 +1,7 @@
 import { Bluetooth, Download, MessageCircle, ScanBarcode, Smartphone } from 'lucide-react'
 import { Button, Card } from '../../components/ui'
 import { useSettings } from '../../lib/hooks'
+import { useAccount } from '../../lib/account'
 
 const TIPS = [
   { icon: Download, t: 'Instalar en el teléfono', d: 'Abre la app en Chrome, toca ⋮ y luego "Agregar a pantalla principal" o "Instalar app". Queda como una app normal y funciona sin internet.' },
@@ -11,6 +12,8 @@ const TIPS = [
 
 export default function Soporte() {
   const s = useSettings()
+  const config = useAccount((a) => a.config)
+  const phone = config?.whatsapp || s.supportPhone
   return (
     <div className="space-y-3">
       {TIPS.map(({ icon: Icon, t, d }) => (
@@ -19,8 +22,8 @@ export default function Soporte() {
           <span><span className="block font-bold">{t}</span><span className="block text-sm text-muted">{d}</span></span>
         </Card>
       ))}
-      {s.supportPhone && (
-        <Button size="lg" className="w-full !bg-[#25d366]" onClick={() => window.open(`https://wa.me/${s.supportPhone.replace(/\D/g, '').replace(/^0/, '58')}?text=${encodeURIComponent(`Hola, necesito ayuda con la app de ${s.business.name}`)}`, '_blank')}>
+      {phone && (
+        <Button size="lg" className="w-full !bg-[#25d366]" onClick={() => window.open(`https://wa.me/${phone.replace(/\D/g, '').replace(/^0/, '58')}?text=${encodeURIComponent(`Hola, necesito ayuda con la app de ${s.business.name}`)}`, '_blank')}>
           <MessageCircle size={19} /> Escribir a soporte por WhatsApp
         </Button>
       )}
