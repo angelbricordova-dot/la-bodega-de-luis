@@ -68,7 +68,6 @@ Si al abrir la app no aparece la pantalla de TuBodega para entrar con usuario y 
 | Más de 7 días sin internet | Pide conectarse para confirmar el plan |
 
 - **Respaldo:** los datos viven en el teléfono y se respaldan comprimidos en la nube cada vez que hay cambios e internet. Se guarda el último respaldo y uno por cada día de la semana.
-- **Teléfono nuevo:** si la bodega entra desde otro teléfono, la app ofrece traer su respaldo.
 - **Referidos:** cuando una bodega creada con el código de otra paga su primer mes, la que la refirió recibe 30 días gratis automáticamente.
 - **Demo:** desde tu panel, **Ajustes → Abrir demo de ventas** muestra la app con productos de ejemplo para tus visitas, sin tocar los datos de ningún cliente.
 - **Clave olvidada:** en tu panel, abre la bodega → **Usuarios → Clave**.
