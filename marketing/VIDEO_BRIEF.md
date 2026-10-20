@@ -64,7 +64,7 @@ Este archivo es todo el contexto para hacer los videos. Los guiones están en [G
 
 | Plan | Precio |
 | --- | --- |
-| Prueba | **15 días gratis** |
+| Prueba | **7 días gratis** |
 | Básico | **$10 al mes**: 1 teléfono, ventas, inventario, fiados, caja, respaldo en la nube |
 | Pro | **$18 al mes**: varios teléfonos y vendedores, ver las ventas desde la casa |
 | Instalación | $30 una vez: se la instalamos, cargamos tus productos y te enseñamos |
@@ -73,7 +73,7 @@ Este archivo es todo el contexto para hacer los videos. Los guiones están en [G
 
 **Frase de precio:** "Menos de lo que vale una malta al día." $10 al mes son unos 33 centavos al día.
 
-**Llamado a la acción:** "Prueba 15 días gratis. Escríbenos por WhatsApp." El número es **[TU WHATSAPP]**; reemplázalo por el real antes de exportar.
+**Llamado a la acción:** "Prueba 7 días gratis. Escríbenos por WhatsApp." El número es **[TU WHATSAPP]**; reemplázalo por el real antes de exportar.
 
 ## Lo que NO se puede decir
 

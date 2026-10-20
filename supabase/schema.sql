@@ -25,7 +25,7 @@ create table if not exists public.stores (
   plan text not null default 'basico' check (plan in ('basico', 'pro')),
   monthly_price numeric(10, 2) not null default 10,
   status text not null default 'trial' check (status in ('trial', 'active', 'suspended', 'cancelled')),
-  paid_until timestamptz not null default now() + interval '15 days',
+  paid_until timestamptz not null default now() + interval '7 days',
   activation_code text unique,
   referral_code text unique,
   referred_by uuid references public.stores (id) on delete set null,
@@ -44,6 +44,8 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 create index if not exists profiles_store_idx on public.profiles (store_id);
+-- La prueba gratis dura 7 días
+alter table public.stores alter column paid_until set default now() + interval '7 days';
 -- Sube cuando el admin cierra la sesión de ese usuario a distancia
 alter table public.profiles add column if not exists session_rev int not null default 0;
 
@@ -354,7 +356,7 @@ $$;
 
 create or replace function public.admin_create_store(
   p_name text, p_owner text, p_phone text, p_plan text default 'basico', p_price numeric default 10,
-  p_trial_days int default 15, p_referred_code text default null
+  p_trial_days int default 7, p_referred_code text default null
 ) returns public.stores
 language plpgsql volatile security definer set search_path = public as $$
 declare
@@ -370,7 +372,7 @@ begin
   end if;
   insert into public.stores (name, owner_name, phone, plan, monthly_price, status, paid_until, activation_code, referral_code, referred_by)
   values (trim(p_name), p_owner, p_phone, coalesce(p_plan, 'basico'), coalesce(p_price, 10), 'trial',
-          now() + make_interval(days => greatest(coalesce(p_trial_days, 15), 0)),
+          now() + make_interval(days => greatest(coalesce(p_trial_days, 7), 0)),
           public.random_code(6), public.random_code(5), ref)
   returning * into s;
   return s;

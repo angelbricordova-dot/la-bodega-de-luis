@@ -67,10 +67,10 @@ export function licenseState(store: Pick<StoreInfo, 'status' | 'paid_until'>, no
   }
   if (now > paidUntil) {
     const left = Math.max(0, Math.ceil((paidUntil + GRACE_DAYS * DAY - now) / DAY))
-    return { mode: 'gracia', canSell: true, daysLeft, paidUntil, message: `Tu plan venció el ${fecha}. Te quedan ${left} día(s) de gracia.` }
+    return { mode: 'gracia', canSell: true, daysLeft, paidUntil, message: `Tu plan venció el ${fecha}. Te quedan ${left} ${left === 1 ? 'día' : 'días'} de gracia.` }
   }
   if (store.status === 'trial') {
-    return { mode: 'prueba', canSell: true, daysLeft, paidUntil, message: `Prueba gratis: quedan ${daysLeft} día(s).` }
+    return { mode: 'prueba', canSell: true, daysLeft, paidUntil, message: `Prueba gratis: quedan ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'}.` }
   }
   if (daysLeft <= WARN_DAYS) {
     return { mode: 'aviso', canSell: true, daysLeft, paidUntil, message: `Tu plan vence el ${fecha}. Reporta tu pago para no interrumpir.` }

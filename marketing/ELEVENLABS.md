@@ -19,7 +19,7 @@
 
 **Cómo escribir el texto para que suene bien:**
 - **"TuBodega"** se escribe "Tu Bodega", separado, para que lo diga como dos palabras.
-- **Los montos van en letras:** "un dólar con treinta", "quince días", "diez dólares al mes". Nunca "$1.30" ni "Bs".
+- **Los montos van en letras:** "un dólar con treinta", "siete días", "diez dólares al mes". Nunca "$1.30" ni "Bs".
 - **"Pago Móvil"** con tilde. **"Zelle"** se pronuncia "sel"; si lo dice raro, escríbelo "Sel".
 - **"BCV"** se escribe "be ce ve".
 - **Las pausas** se marcan con "…" o con un punto. Una frase por escena.

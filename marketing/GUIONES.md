@@ -13,7 +13,7 @@ Antes de empezar, lee [VIDEO_BRIEF.md](VIDEO_BRIEF.md): ahí están el producto,
   - Deja 90 px libres a la derecha.
 - **El gancho va en los primeros 2 segundos.** Nada de logos al inicio.
 - **La app se muestra dentro de una maqueta de teléfono** o a pantalla completa con un zoom suave a la zona importante, nunca la captura entera pequeña.
-- **El cierre lleva siempre** el logo de TuBodega, "Prueba 15 días gratis" y "WhatsApp [TU WHATSAPP]".
+- **El cierre lleva siempre** el logo de TuBodega, "Prueba 7 días gratis" y "WhatsApp [TU WHATSAPP]".
 - **La voz va escrita como se dice.** Números en letras, "bolívares" y no "Bs", "Tu Bodega" separado al leerlo.
 
 ---
@@ -32,10 +32,10 @@ Antes de empezar, lee [VIDEO_BRIEF.md](VIDEO_BRIEF.md): ahí están el producto,
 | 11–15 s | `screens/08-pago-movil.png` → `screens/11-credito-fiado.png` (corte rápido) | **Pago Móvil · Punto · Zelle · Fiado** | Pago Móvil, punto, Zelle, efectivo… o fiado. | 2 taps |
 | 15–19 s | `screens/12-cuaderno-fiados.png` → `screens/17-cuadre-del-dia.png` | **Sabes quién te debe y cuánto ganaste hoy** | Sabes quién te debe, cuánto vendiste y cuánto ganaste hoy. | caja registradora "cha-ching" en el total |
 | 19–23 s | `screens/24-ticket-impreso.png` saliendo hacia arriba como de una impresora | **Imprime tu ticket. Funciona sin internet.** | Imprime tu ticket, y funciona aunque se vaya el internet. | impresora térmica |
-| 23–30 s | Logo TuBodega grande, debajo la maqueta con `screens/01-venta-inicio.png` | **TuBodega** · **Prueba 15 días gratis** · **WhatsApp [TU WHATSAPP]** | Tu Bodega. Prueba quince días gratis. Escríbenos por WhatsApp. | la música sube y termina en seco |
+| 23–30 s | Logo TuBodega grande, debajo la maqueta con `screens/01-venta-inicio.png` | **TuBodega** · **Prueba 7 días gratis** · **WhatsApp [TU WHATSAPP]** | Tu Bodega. Prueba siete días gratis. Escríbenos por WhatsApp. | la música sube y termina en seco |
 
 Texto para publicar:
-> ¿Sigues con el cuaderno? 📒 TuBodega lleva tus ventas, fiados e inventario desde el teléfono. Precios en $ y Bs, Pago Móvil, vuelto y cuadre de caja. Prueba 15 días gratis 👉 escríbenos por WhatsApp.
+> ¿Sigues con el cuaderno? 📒 TuBodega lleva tus ventas, fiados e inventario desde el teléfono. Precios en $ y Bs, Pago Móvil, vuelto y cuadre de caja. Prueba 7 días gratis 👉 escríbenos por WhatsApp.
 > #bodega #abasto #venezuela #emprendedores #pagomovil #puntodeventa
 
 ---
@@ -49,7 +49,7 @@ Texto para publicar:
 | 0–2 s | Pantalla negra, el texto aparece letra por letra | **¿Cuánto te deben en fiados?** | ¿Cuánto te deben en fiados? | tic de teclado |
 | 2–4 s | Texto | **¿Exacto?** | ¿Exacto? | silencio de medio segundo |
 | 4–10 s | `clips/03-fiado-y-abono.mp4`, del segundo 6 al 12: abre el cuaderno y registra un abono | **Tu cuaderno de fiados, en el teléfono** | Con Tu Bodega lo sabes al centavo, y le recuerdas al cliente por WhatsApp. | pop y monedas |
-| 10–15 s | Logo + teléfono con `screens/12-cuaderno-fiados.png` | **TuBodega · 15 días gratis** | Tu Bodega. Prueba quince días gratis. | golpe final de música |
+| 10–15 s | Logo + teléfono con `screens/12-cuaderno-fiados.png` | **TuBodega · 7 días gratis** | Tu Bodega. Prueba siete días gratis. | golpe final de música |
 
 ---
 
@@ -146,7 +146,7 @@ Texto para publicar:
 | 25–33 s | `screens/08-pago-movil.png` → `screens/24-ticket-impreso.png` | **Cobra de todo** · Pago Móvil · Punto · Zelle · Efectivo · Ticket impreso o por WhatsApp | Cobras con Pago Móvil, punto, Zelle o efectivo, y entregas el ticket impreso o por WhatsApp. |
 | 33–42 s | `clips/03-fiado-y-abono.mp4` | **Fiados al día** · Cuaderno digital · Abonos · Recordatorios | Llevas los fiados sin cuaderno, con abonos y recordatorios. |
 | 42–52 s | `clips/05-cuadre-y-cierre-de-caja.mp4` | **Control total** · Inventario · Cuadre del día · Cierre de caja | Sabes qué se está acabando, cuánto vendiste y si la caja cuadra. Y funciona sin internet. |
-| 52–60 s | `screens/25-entrar-tubodega.png` | **Prueba 15 días gratis** · Desde $10 al mes · WhatsApp [TU WHATSAPP] | Pruébalo quince días gratis. Te lo instalamos y te enseñamos. Escríbenos por WhatsApp. |
+| 52–60 s | `screens/25-entrar-tubodega.png` | **Prueba 7 días gratis** · Desde $10 al mes · WhatsApp [TU WHATSAPP] | Pruébalo siete días gratis. Te lo instalamos y te enseñamos. Escríbenos por WhatsApp. |
 
 ---
 

@@ -94,7 +94,7 @@ function NuevaBodega({ onClose, onCreated }: { onClose: () => void; onCreated: (
   const [phone, setPhone] = useState('')
   const [plan, setPlan] = useState<'basico' | 'pro'>('basico')
   const [price, setPrice] = useState('10')
-  const [trial, setTrial] = useState('15')
+  const [trial, setTrial] = useState('7')
   const [ref, setRef] = useState('')
   const [busy, setBusy] = useState(false)
   const create = async () => {
