@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CloudDownload, Lock } from 'lucide-react'
 import { db, lastLocalChange } from '../db'
-import { refreshLicense, signOut, useAccount, useLicenseState } from '../lib/account'
+import { refreshLicense, setAccount, signOut, useAccount, useLicenseState } from '../lib/account'
 import { supabase } from '../lib/cloud'
 import { findCloudBackup, lastCloudBackup, restoreCloudBackup, uploadCloudBackup } from '../lib/backup'
 import { periodStart } from '../lib/sales'
@@ -51,7 +51,7 @@ async function collectStats() {
 export function CloudSync() {
   const account = useAccount((s) => s.account)
   const storeId = account?.mode === 'store' ? account.storeId : null
-  const [restore, setRestore] = useState<{ updatedAt: string } | null>(null)
+  const [restore, setRestore] = useState<{ path: string; updatedAt: string } | null>(null)
   const [restoring, setRestoring] = useState(false)
   const busy = useRef(false)
 
@@ -84,6 +84,16 @@ export function CloudSync() {
           toast('Este usuario ya no está vinculado a la bodega.', { tone: 'error' })
           setTimeout(() => signOut(), 1500)
           return
+        }
+        const acc = useAccount.getState().account
+        if (acc?.mode === 'store') {
+          if (acc.sessionRev == null) setAccount({ ...acc, sessionRev: lic.sessionRev ?? 0 })
+          else if ((lic.sessionRev ?? 0) !== acc.sessionRev) {
+            await backupIfNeeded(true)
+            toast('El administrador cerró la sesión en este teléfono.', { tone: 'error' })
+            setTimeout(() => signOut(), 1500)
+            return
+          }
         }
         let fresh = false
         try {
@@ -154,7 +164,7 @@ export function CloudSync() {
           onClick={async () => {
             setRestoring(true)
             try {
-              await restoreCloudBackup(storeId)
+              await restoreCloudBackup(restore.path)
               hold(false)
               toast('Datos restaurados')
               setRestore(null)

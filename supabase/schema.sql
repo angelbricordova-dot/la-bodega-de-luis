@@ -44,6 +44,8 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 create index if not exists profiles_store_idx on public.profiles (store_id);
+-- Sube cuando el admin cierra la sesión de ese usuario a distancia
+alter table public.profiles add column if not exists session_rev int not null default 0;
 
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
@@ -157,14 +159,15 @@ create or replace function public.get_license() returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
   s public.stores;
-  r text;
+  pr public.profiles;
 begin
   select * into s from public.stores where id = public.my_store_id();
-  select role into r from public.profiles where user_id = auth.uid();
+  select * into pr from public.profiles where user_id = auth.uid();
   return jsonb_build_object(
     'server_now', now(),
     'is_admin', public.is_admin(),
-    'role', r,
+    'role', pr.role,
+    'session_rev', coalesce(pr.session_rev, 0),
     'store', case when s.id is null then null else public.store_json(s) end
   );
 end;
@@ -392,6 +395,21 @@ begin
 end;
 $$;
 
+-- Cerrar la sesión de un usuario en todos sus teléfonos
+create or replace function public.admin_force_logout(p_user uuid) returns void
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform public.require_admin();
+  update public.profiles set session_rev = session_rev + 1 where user_id = p_user;
+  begin
+    delete from auth.refresh_tokens where user_id = p_user::text;
+    delete from auth.sessions where user_id = p_user;
+  exception when undefined_table or undefined_column then
+    null;
+  end;
+end;
+$$;
+
 -- Desvincular un usuario de su bodega (teléfono perdido, empleado que se fue)
 create or replace function public.admin_remove_member(p_user uuid) returns void
 language plpgsql volatile security definer set search_path = public as $$
@@ -410,6 +428,7 @@ grant execute on function
   public.admin_extend(uuid, int), public.admin_review_payment(uuid, boolean, text),
   public.admin_record_payment(uuid, numeric, text, text, int), public.admin_new_activation_code(uuid),
   public.admin_store_members(uuid), public.admin_reset_password(uuid, text), public.admin_remove_member(uuid),
+  public.admin_force_logout(uuid),
   public.is_admin(), public.my_store_id()
 to authenticated;
 

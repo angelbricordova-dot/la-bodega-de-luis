@@ -36,7 +36,7 @@ export default function AuthScreen() {
         const lic = await refreshLicense()
         const u = data.session.user
         if (lic.store) {
-          setAccount({ mode: 'store', storeId: lic.store.id, userId: u.id, email: u.email ?? '' })
+          setAccount({ mode: 'store', storeId: lic.store.id, userId: u.id, email: u.email ?? '', sessionRev: lic.sessionRev ?? 0 })
           go('/')
         } else if (lic.isAdmin) {
           setAccount({ mode: 'admin', userId: u.id, email: u.email ?? '' })

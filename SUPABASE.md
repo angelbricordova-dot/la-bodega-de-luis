@@ -29,6 +29,8 @@ Ese archivo crea:
 
 Si en algún momento lo ejecutas antes del paso 2, crea el usuario y vuelve a ejecutarlo. Se puede correr las veces que quieras sin perder datos.
 
+**Cada vez que actualice la app con cambios en la base de datos, vuelve a pegar y ejecutar `schema.sql` completo.** No borra nada: solo agrega lo nuevo.
+
 ## 4. Variables en Vercel
 
 La URL y la clave de Supabase no están en el repositorio: se configuran en Vercel.
@@ -70,3 +72,5 @@ Si al abrir la app no aparece la pantalla de TuBodega para entrar con usuario y 
 - **Referidos:** cuando una bodega creada con el código de otra paga su primer mes, la que la refirió recibe 30 días gratis automáticamente.
 - **Demo:** desde tu panel, **Ajustes → Abrir demo de ventas** muestra la app con productos de ejemplo para tus visitas, sin tocar los datos de ningún cliente.
 - **Clave olvidada:** en tu panel, abre la bodega → **Usuarios → Clave**.
+- **Cerrar sesión:** cada usuario tiene el botón al final de **Ajustes**. Desde tu panel también puedes cerrar la sesión de cualquier usuario a distancia (bodega → **Usuarios** → botón de salida). Se cierra en sus teléfonos en máximo 10 minutos si tienen internet.
+- **Varios teléfonos:** por ahora cada teléfono guarda sus propias ventas; no se juntan entre teléfonos. Cada teléfono respalda en su propia carpeta para que no se pisen.

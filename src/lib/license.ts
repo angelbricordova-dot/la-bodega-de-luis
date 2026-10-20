@@ -21,6 +21,8 @@ export interface CachedLicense {
   store: StoreInfo | null
   isAdmin: boolean
   role?: 'owner' | 'seller' | null
+  /** Sube cuando el admin cierra la sesión de este usuario */
+  sessionRev?: number
   /** Cuándo se confirmó con el servidor (hora del teléfono) */
   checkedAt: number
   /** Diferencia entre la hora del servidor y la del teléfono */

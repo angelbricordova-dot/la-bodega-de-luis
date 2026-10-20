@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { BadgeCheck, Briefcase, CreditCard, FolderTree, HardDrive, Headphones, LineChart, Printer, Settings, ShieldCheck, ShoppingBasket, UserCog, Users, Vault } from 'lucide-react'
+import { BadgeCheck, LogOut, Briefcase, CreditCard, FolderTree, HardDrive, Headphones, LineChart, Printer, Settings, ShieldCheck, ShoppingBasket, UserCog, Users, Vault } from 'lucide-react'
 import { Page, PageHeader } from '../../components/Layout'
-import { Button, Input } from '../../components/ui'
+import { Button, Card, Input, confirmDialog } from '../../components/ui'
 import { useSettings } from '../../lib/hooks'
 import Negocio from './Negocio'
 import Pagos from './Pagos'
@@ -17,7 +17,8 @@ import Avanzado from './Avanzado'
 import Admin from './Admin'
 import Soporte from './Soporte'
 import MiPlan from './MiPlan'
-import { cloudEnabled } from '../../lib/cloud'
+import { cloudEnabled, emailToLogin } from '../../lib/cloud'
+import { backToAdmin, signOutSafely, useAccount } from '../../lib/account'
 
 const SECTIONS: { key: string; label: string; icon: typeof Settings; color: string; el: () => ReactNode; protect?: boolean }[] = [
   ...(cloudEnabled ? [{ key: 'plan', label: 'Mi plan', icon: BadgeCheck, color: '#2f9e6e', el: () => <MiPlan /> }] : []),
@@ -91,8 +92,52 @@ export default function Ajustes() {
             </button>
           ))}
         </div>
-        <p className="text-center text-xs text-muted mt-8">TuBodega · v1.1 · Tus datos se guardan en este teléfono</p>
+        <SessionCard />
+        <p className="text-center text-xs text-muted mt-6">TuBodega · v1.1 · Tus datos se guardan en este teléfono</p>
       </Page>
     </>
+  )
+}
+
+/** Quién está conectado en este teléfono y el botón para salir */
+function SessionCard() {
+  const { account, license } = useAccount()
+  if (!cloudEnabled || !account || account.mode === 'admin') return null
+  const isDemoAdmin = account.mode === 'demo' && account.isAdmin
+  const who = account.mode === 'store' ? emailToLogin(account.email) : 'Modo demostración'
+  const where = account.mode === 'store' ? license?.store?.name : 'Datos de ejemplo'
+  return (
+    <Card className="mt-5 p-4">
+      <div className="flex items-center gap-3">
+        <span className="size-11 rounded-full bg-brand-50 text-brand-700 font-extrabold grid place-items-center uppercase">{who[0]}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold truncate">{who}</p>
+          <p className="text-xs text-muted truncate">
+            {where}
+            {account.mode === 'store' && license?.role === 'seller' ? ' · Vendedor' : account.mode === 'store' ? ' · Dueño' : ''}
+          </p>
+        </div>
+      </div>
+      <div className={`grid gap-2.5 mt-3 ${isDemoAdmin ? 'grid-cols-2' : ''}`}>
+        {isDemoAdmin && (
+          <Button variant="soft" onClick={backToAdmin}>
+            Volver al panel
+          </Button>
+        )}
+        <Button
+          variant="danger"
+          onClick={async () => {
+            const ok = await confirmDialog('¿Cerrar sesión en este teléfono?', {
+              text: account.mode === 'store' ? 'Tus datos quedan guardados en el teléfono y en la nube. Para volver a entrar necesitas tu usuario y clave.' : undefined,
+              ok: 'Cerrar sesión',
+              danger: true,
+            })
+            if (ok) signOutSafely()
+          }}
+        >
+          <LogOut size={17} /> Cerrar sesión
+        </Button>
+      </div>
+    </Card>
   )
 }

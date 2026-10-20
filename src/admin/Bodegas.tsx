@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Ban, CalendarPlus, Copy, KeyRound, MessageCircle, Phone, Plus, RotateCcw, Save, Search, Store, Trash2, UserX } from 'lucide-react'
+import { ArrowLeft, Ban, CalendarPlus, Copy, KeyRound, LogOut, MessageCircle, Phone, Plus, RotateCcw, Save, Search, Store, Trash2, UserX } from 'lucide-react'
 import { Badge, Button, Card, Chip, Empty, Field, Input, Segmented, Sheet, TextArea, confirmDialog, cx, toast } from '../components/ui'
 import { friendlyError, emailToLogin, supabase } from '../lib/cloud'
 import type { LicenseMode } from '../lib/license'
@@ -297,6 +297,17 @@ export function BodegaDetalle({ onChange }: { onChange: () => void }) {
                 }}
               >
                 <KeyRound size={14} /> Clave
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Cerrar sesión"
+                onClick={async () =>
+                  (await confirmDialog(`¿Cerrar la sesión de ${emailToLogin(m.email)}?`, { text: 'Se cerrará en todos sus teléfonos la próxima vez que abran la app (máximo 10 minutos con internet). Podrá volver a entrar con su usuario y clave.', ok: 'Cerrar sesión', danger: true })) &&
+                  call(() => supabase.rpc('admin_force_logout', { p_user: m.user_id }), 'Sesión cerrada')
+                }
+              >
+                <LogOut size={14} />
               </Button>
               <Button
                 size="sm"

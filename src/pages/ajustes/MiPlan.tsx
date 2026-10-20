@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CalendarClock, CheckCircle2, Clock, CloudUpload, Gift, LogOut, MessageCircle, RefreshCw, Send, XCircle } from 'lucide-react'
 import { Badge, Button, Card, Chip, Field, Input, Segmented, Sheet, TextArea, confirmDialog, cx, toast } from '../../components/ui'
-import { backToAdmin, loadProviderConfig, refreshLicense, signOut, useAccount, useLicenseState } from '../../lib/account'
+import { backToAdmin, loadProviderConfig, refreshLicense, signOut, signOutSafely, useAccount, useLicenseState } from '../../lib/account'
 import { cloudEnabled, emailToLogin, friendlyError, supabase } from '../../lib/cloud'
 import { lastCloudBackup, uploadCloudBackup } from '../../lib/backup'
 import { useSettings } from '../../lib/hooks'
@@ -193,7 +193,7 @@ export default function MiPlan() {
           variant="danger"
           className="w-full"
           onClick={async () => {
-            if (await confirmDialog('¿Cerrar sesión?', { text: 'Tus datos quedan guardados en este teléfono y en la nube. Para volver a entrar necesitas tu usuario y clave.', ok: 'Cerrar sesión', danger: true })) signOut()
+            if (await confirmDialog('¿Cerrar sesión?', { text: 'Tus datos quedan guardados en este teléfono y en la nube. Para volver a entrar necesitas tu usuario y clave.', ok: 'Cerrar sesión', danger: true })) signOutSafely()
           }}
         >
           <LogOut size={17} /> Cerrar sesión

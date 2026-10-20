@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { cloudEnabled, loginToEmail, supabase } from './cloud'
 import { licenseState, type CachedLicense, type StoreInfo } from './license'
+import { lastCloudBackup, uploadCloudBackup } from './backup'
+import { lastLocalChange } from '../db'
 
 /**
  * Con qué cuenta se abrió la app en este teléfono:
@@ -9,7 +11,7 @@ import { licenseState, type CachedLicense, type StoreInfo } from './license'
  * - demo: datos de ejemplo para mostrar la app en una visita de venta
  */
 export type Account =
-  | { mode: 'store'; storeId: string; userId: string; email: string }
+  | { mode: 'store'; storeId: string; userId: string; email: string; sessionRev?: number }
   | { mode: 'admin'; userId: string; email: string }
   | { mode: 'demo'; userId?: string; email?: string; isAdmin?: boolean }
 
@@ -73,12 +75,13 @@ interface LicenseResponse {
   server_now: string
   is_admin: boolean
   role: 'owner' | 'seller' | null
+  session_rev?: number
   store: StoreInfo | null
 }
 
 function toCached(r: LicenseResponse): CachedLicense {
   const now = Date.now()
-  return { store: r.store, isAdmin: r.is_admin, role: r.role, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
+  return { store: r.store, isAdmin: r.is_admin, role: r.role, sessionRev: r.session_rev ?? 0, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
 }
 
 /** Pregunta al servidor el estado del plan (y le manda los números del día) */
@@ -100,7 +103,7 @@ export async function loadProviderConfig() {
 
 /** Decide a dónde va la cuenta después de entrar */
 function accountFor(lic: CachedLicense, userId: string, email: string): Account | null {
-  if (lic.store) return { mode: 'store', storeId: lic.store.id, userId, email }
+  if (lic.store) return { mode: 'store', storeId: lic.store.id, userId, email, sessionRev: lic.sessionRev ?? 0 }
   if (lic.isAdmin) return { mode: 'admin', userId, email }
   return null
 }
@@ -142,6 +145,19 @@ export async function signOut() {
   setAccount(null)
   setLicense(null)
   location.replace('/')
+}
+
+/** Cierra sesión subiendo antes un último respaldo si hay cambios sin respaldar */
+export async function signOutSafely() {
+  const acc = useAccount.getState().account
+  if (acc?.mode === 'store' && navigator.onLine && lastLocalChange() > lastCloudBackup()) {
+    try {
+      await uploadCloudBackup(acc.storeId)
+    } catch {
+      /* se cierra igual: los datos siguen en el teléfono */
+    }
+  }
+  await signOut()
 }
 
 export function enterDemo() {
