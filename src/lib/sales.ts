@@ -40,7 +40,7 @@ export async function createSale(input: NewSale): Promise<Sale> {
     const open = (await db.cashSessions.toArray()).find((c) => !c.closedAt)
     const fiado = input.payments.filter((p) => p.method === 'fiado').reduce((a, p) => a + p.amount, 0)
     const sale: Sale = {
-      number: s.nextSaleNumber,
+      number: ((await db.sales.orderBy('number').last())?.number ?? 0) + 1,
       createdAt: Date.now(),
       items: input.items,
       subtotal: input.subtotal,
@@ -59,7 +59,6 @@ export async function createSale(input: NewSale): Promise<Sale> {
       cashSessionId: open?.id,
     }
     sale.id = await db.sales.add(sale)
-    await db.settings.update('main', { nextSaleNumber: s.nextSaleNumber + 1 })
     await moveStock(input.items, -1, 'venta', `Ticket #${sale.number}`)
     if (input.fromQuoteId) await db.quotes.update(input.fromQuoteId, { status: 'convertida' })
     return sale
@@ -82,7 +81,7 @@ export async function createQuote(input: Omit<Quote, 'id' | 'number' | 'createdA
     const now = Date.now()
     const q: Quote = {
       ...input,
-      number: s.nextQuoteNumber,
+      number: ((await db.quotes.orderBy('number').last())?.number ?? 0) + 1,
       createdAt: now,
       validUntil: now + s.quoteValidityDays * 864e5,
       rate: s.rate,
@@ -90,7 +89,6 @@ export async function createQuote(input: Omit<Quote, 'id' | 'number' | 'createdA
       customerName: customer?.name,
     }
     q.id = await db.quotes.add(q)
-    await db.settings.update('main', { nextQuoteNumber: s.nextQuoteNumber + 1 })
     return q
   })
 }

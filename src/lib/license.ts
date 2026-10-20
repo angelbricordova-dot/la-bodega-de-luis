@@ -23,6 +23,9 @@ export interface CachedLicense {
   role?: 'owner' | 'seller' | null
   /** Sube cuando el admin cierra la sesión de este usuario */
   sessionRev?: number
+  /** En el plan Básico, si este teléfono es el habilitado para vender */
+  deviceOk?: boolean
+  devicesActive?: number
   /** Cuándo se confirmó con el servidor (hora del teléfono) */
   checkedAt: number
   /** Diferencia entre la hora del servidor y la del teléfono */
@@ -34,7 +37,7 @@ export const WARN_DAYS = 3
 export const OFFLINE_DAYS = 7
 const DAY = 864e5
 
-export type LicenseMode = 'prueba' | 'activa' | 'aviso' | 'gracia' | 'vencida' | 'suspendida' | 'conectar'
+export type LicenseMode = 'prueba' | 'activa' | 'aviso' | 'gracia' | 'vencida' | 'suspendida' | 'conectar' | 'dispositivo'
 
 export interface LicenseState {
   mode: LicenseMode
@@ -46,7 +49,7 @@ export interface LicenseState {
 }
 
 /** Calcula el estado del plan; se usa igual en la app y en el panel del admin */
-export function licenseState(store: Pick<StoreInfo, 'status' | 'paid_until'>, now: number, checkedAt = now): LicenseState {
+export function licenseState(store: Pick<StoreInfo, 'status' | 'paid_until'>, now: number, checkedAt = now, deviceOk = true): LicenseState {
   const paidUntil = new Date(store.paid_until).getTime()
   const daysLeft = Math.ceil((paidUntil - now) / DAY)
   const fecha = new Date(paidUntil).toLocaleDateString('es-VE', { day: 'numeric', month: 'long' })
@@ -58,6 +61,9 @@ export function licenseState(store: Pick<StoreInfo, 'status' | 'paid_until'>, no
   }
   if (now > paidUntil + GRACE_DAYS * DAY) {
     return { mode: 'vencida', canSell: false, daysLeft, paidUntil, message: 'Tu plan venció. Reporta tu pago para seguir vendiendo; tus datos están completos.' }
+  }
+  if (!deviceOk) {
+    return { mode: 'dispositivo', canSell: false, daysLeft, paidUntil, message: 'Tu plan Básico es para 1 teléfono y se está usando en otro. Este teléfono queda en solo lectura.' }
   }
   if (now > paidUntil) {
     const left = Math.max(0, Math.ceil((paidUntil + GRACE_DAYS * DAY - now) / DAY))

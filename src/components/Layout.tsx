@@ -7,6 +7,7 @@ import { useOpenCash, useSettings } from '../lib/hooks'
 import { usd } from '../lib/money'
 import { cx, IconButton, Sheet } from './ui'
 import { CashSheet } from './CashSheet'
+import { SyncBadge } from './CloudSync'
 
 export function PageHeader({ title, icon, back, right }: { title: string; icon?: ReactNode; back?: boolean; right?: ReactNode }) {
   const nav = useNavigate()
@@ -32,7 +33,8 @@ export function PageHeader({ title, icon, back, right }: { title: string; icon?:
         <div className="size-10 rounded-2xl bg-brand-50 text-brand-600 grid place-items-center">{icon}</div>
         <div className="flex-1 min-w-0">
           <h1 className="font-bold text-[17px] leading-tight truncate">{title}</h1>
-          <button onClick={() => setCashOpen(true)} className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+          <button onClick={() => setCashOpen(true)} className="flex items-center gap-1.5 shrink-0">
             <span
               className={cx(
                 'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide',
@@ -44,6 +46,8 @@ export function PageHeader({ title, icon, back, right }: { title: string; icon?:
             </span>
             <span className="text-[10px] font-semibold text-muted tabular">Tasa {s.rate.toFixed(2)}</span>
           </button>
+          <SyncBadge />
+          </div>
         </div>
         {right}
         <Notifications />

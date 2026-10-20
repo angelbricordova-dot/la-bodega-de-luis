@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie'
+import Dexie, { type Table, type Transaction } from 'dexie'
 
 export type SellUnit = 'unidad' | 'kg' | 'm'
 
@@ -242,7 +242,104 @@ class BodegaDB extends Dexie {
       expenses: '++id, createdAt',
       settings: 'id',
     })
+    // v2: _u = cuándo cambió en este teléfono (para saber qué falta subir a la nube)
+    this.version(2).stores({
+      products: '++id, name, barcode, categoryId, _u',
+      categories: '++id, name, _u',
+      customers: '++id, name, _u',
+      sellers: '++id, name, _u',
+      sales: '++id, number, createdAt, customerId, status, _u',
+      quotes: '++id, number, createdAt, status, _u',
+      debtPayments: '++id, customerId, createdAt, _u',
+      stockMoves: '++id, productId, createdAt, _u',
+      cashSessions: '++id, openedAt, closedAt, _u',
+      purchases: '++id, createdAt, _u',
+      expenses: '++id, createdAt, _u',
+      settings: 'id, _u',
+    })
   }
+}
+
+/** Tablas que se comparten entre los teléfonos de una bodega */
+export const SYNC_TABLES = [
+  'categories',
+  'products',
+  'customers',
+  'sellers',
+  'sales',
+  'quotes',
+  'debtPayments',
+  'stockMoves',
+  'cashSessions',
+  'purchases',
+  'expenses',
+  'settings',
+] as const
+export type SyncTable = (typeof SYNC_TABLES)[number]
+
+function lsGet(k: string) {
+  try {
+    return localStorage.getItem(k)
+  } catch {
+    return null
+  }
+}
+function lsSet(k: string, v: string) {
+  try {
+    localStorage.setItem(k, v)
+  } catch {
+    /* sin almacenamiento */
+  }
+}
+
+/**
+ * Ids únicos entre teléfonos: segundos desde 2025 × 1.000.000 + número del teléfono × 1000 + contador.
+ * Así dos teléfonos de la misma bodega nunca crean el mismo id.
+ */
+const ID_EPOCH = Date.UTC(2025, 0, 1)
+function deviceNum() {
+  let n = Number(lsGet('tubodega-devnum'))
+  if (!Number.isInteger(n) || n < 1 || n > 999) {
+    n = 1 + Math.floor(Math.random() * 999)
+    lsSet('tubodega-devnum', String(n))
+  }
+  return n
+}
+export function newId() {
+  const base = Math.floor((Date.now() - ID_EPOCH) / 1000) * 1e6 + deviceNum() * 1000
+  const last = Number(lsGet('tubodega-lastid') || 0)
+  const id = base > last ? base : last + 1
+  lsSet('tubodega-lastid', String(id))
+  return id
+}
+
+/** Las escrituras que vienen de otro teléfono se marcan para no volver a subirlas */
+export function markRemote(tx: Transaction | null) {
+  if (tx) (tx as unknown as { __remote?: boolean }).__remote = true
+}
+const isRemote = (tx: Transaction) => !!(tx as unknown as { __remote?: boolean }).__remote
+
+const changeListeners = new Set<() => void>()
+export function onLocalChange(fn: () => void) {
+  changeListeners.add(fn)
+  return () => changeListeners.delete(fn)
+}
+const notifyChange = () => setTimeout(() => changeListeners.forEach((f) => f()), 0)
+
+let trackDeletes = false
+export function setTrackDeletes(on: boolean) {
+  trackDeletes = on
+}
+export const tombstoneKey = () => `tubodega-del-${db.name}`
+export function readTombstones(): { t: string; id: string }[] {
+  try {
+    return JSON.parse(lsGet(tombstoneKey()) || '[]')
+  } catch {
+    return []
+  }
+}
+export function writeTombstones(list: { t: string; id: string }[]) {
+  lsSet(tombstoneKey(), JSON.stringify(list))
 }
 
 /** Base de datos local de la bodega abierta. Cada cuenta tiene la suya en el teléfono. */
@@ -267,6 +364,32 @@ export function openDb(name: string) {
     t.hook('creating', mark)
     t.hook('updating', mark)
     t.hook('deleting', mark)
+  }
+  for (const name of SYNC_TABLES) {
+    const t = db.table(name)
+    const autoId = name !== 'settings'
+    t.hook('creating', function (pk, obj, tx) {
+      const o = obj as { id?: number | string; _u?: number }
+      if (!isRemote(tx)) {
+        o._u = Date.now()
+        notifyChange()
+      }
+      if (autoId && pk == null && o.id == null) {
+        o.id = newId()
+        return o.id
+      }
+      return undefined
+    })
+    t.hook('updating', function (_mods, _pk, _obj, tx) {
+      if (isRemote(tx)) return undefined
+      notifyChange()
+      return { _u: Date.now() }
+    })
+    t.hook('deleting', function (pk, _obj, tx) {
+      if (isRemote(tx) || !trackDeletes) return
+      writeTombstones([...readTombstones(), { t: name, id: String(pk) }])
+      notifyChange()
+    })
   }
   return db
 }

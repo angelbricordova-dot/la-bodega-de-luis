@@ -8,7 +8,6 @@ import { openDb } from './db'
 import { cloudEnabled } from './lib/cloud'
 import { useAccount } from './lib/account'
 import { initStoreDb, seedIfEmpty } from './lib/seed'
-import { FRESH_KEY } from './components/CloudSync'
 import './index.css'
 
 registerSW({ immediate: true })
@@ -47,13 +46,7 @@ async function boot() {
 
   openDb(`tubodega-${account.storeId}`)
   const store = license?.store
-  if (await initStoreDb({ name: store?.name ?? 'Mi Bodega', rif: store?.rif, address: store?.address, phone: store?.phone })) {
-    try {
-      sessionStorage.setItem(FRESH_KEY, '1')
-    } catch {
-      /* nada */
-    }
-  }
+  await initStoreDb({ name: store?.name ?? 'Mi Bodega', rif: store?.rif, address: store?.address, phone: store?.phone })
   render(<BrowserRouter><App /></BrowserRouter>)
 }
 

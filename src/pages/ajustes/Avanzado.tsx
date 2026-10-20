@@ -68,11 +68,12 @@ export default function Avanzado() {
               toast('Datos de ejemplo cargados')
             }
           }}><RotateCcw size={17} /> Cargar datos de ejemplo</Button>}
-          <Button variant="danger" onClick={async () => {
+          {isStore && <p className="text-sm text-muted">Para borrar los datos de una bodega con cuenta, escríbele a soporte: se comparten entre todos sus teléfonos.</p>}
+          {!isStore && <Button variant="danger" onClick={async () => {
             if (!(await confirmDialog('¿Borrar todo y empezar de cero?', { text: 'Se eliminan productos, ventas, clientes y fiados. Haz un respaldo antes.', ok: 'Borrar todo', danger: true }))) return
             await wipeAll()
             toast('Datos borrados', { tone: 'info' })
-          }}><Trash2 size={17} /> Borrar todo y empezar de cero</Button>
+          }}><Trash2 size={17} /> Borrar todo y empezar de cero</Button>}
         </div>
       </Card>
     </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { CalendarClock, CheckCircle2, Clock, CloudUpload, Gift, LogOut, MessageCircle, RefreshCw, Send, XCircle } from 'lucide-react'
+import { CalendarClock, CheckCircle2, Clock, CloudUpload, Gift, LogOut, MessageCircle, RefreshCw, Send, Smartphone, XCircle } from 'lucide-react'
 import { Badge, Button, Card, Chip, Field, Input, Segmented, Sheet, TextArea, confirmDialog, cx, toast } from '../../components/ui'
-import { backToAdmin, loadProviderConfig, refreshLicense, signOut, signOutSafely, useAccount, useLicenseState } from '../../lib/account'
+import { backToAdmin, claimThisDevice, deviceName, loadProviderConfig, refreshLicense, signOut, signOutSafely, useAccount, useLicenseState } from '../../lib/account'
 import { cloudEnabled, emailToLogin, friendlyError, supabase } from '../../lib/cloud'
 import { lastCloudBackup, uploadCloudBackup } from '../../lib/backup'
 import { useSettings } from '../../lib/hooks'
@@ -35,8 +35,9 @@ const MODE_TONE = {
   vencida: 'red',
   suspendida: 'red',
   conectar: 'gray',
+  dispositivo: 'amber',
 } as const
-const MODE_LABEL = { prueba: 'Prueba gratis', activa: 'Activo', aviso: 'Por vencer', gracia: 'En gracia', vencida: 'Vencido', suspendida: 'Suspendido', conectar: 'Sin confirmar' }
+const MODE_LABEL = { prueba: 'Prueba gratis', activa: 'Activo', aviso: 'Por vencer', gracia: 'En gracia', vencida: 'Vencido', suspendida: 'Suspendido', conectar: 'Sin confirmar', dispositivo: 'Otro teléfono' }
 
 export default function MiPlan() {
   const { account, license, config } = useAccount()
@@ -123,6 +124,41 @@ export default function MiPlan() {
             <Send size={16} /> Reportar pago
           </Button>
         </div>
+      </Card>
+
+      <Card className="p-4">
+        <p className="font-bold flex items-center gap-2">
+          <Smartphone size={18} /> Teléfonos
+        </p>
+        <p className="text-sm text-muted mt-1">
+          {store.plan === 'pro'
+            ? 'Tu plan Pro permite usar TuBodega en todos los teléfonos que quieras. Ventas, inventario y fiados se comparten al momento.'
+            : 'Tu plan Básico permite vender desde 1 teléfono. Con el plan Pro puedes usar varios y ver las ventas desde tu casa.'}
+        </p>
+        <div className="flex justify-between text-sm mt-3 rounded-xl bg-canvas px-3 py-2">
+          <span className="text-muted">Este teléfono</span>
+          <span className="font-semibold">{deviceName()}</span>
+        </div>
+        <div className="flex justify-between text-sm mt-2 rounded-xl bg-canvas px-3 py-2">
+          <span className="text-muted">Teléfonos activos esta semana</span>
+          <span className="font-semibold">{license?.devicesActive ?? 1}</span>
+        </div>
+        {l.mode === 'dispositivo' && (
+          <Button
+            className="w-full mt-3"
+            onClick={async () => {
+              if (!(await confirmDialog('¿Usar TuBodega en este teléfono?', { text: 'El otro teléfono quedará en solo lectura: podrá ver los datos pero no vender.', ok: 'Usar este teléfono' }))) return
+              try {
+                await claimThisDevice()
+                toast('Listo: este teléfono ya puede vender')
+              } catch (e) {
+                toast(friendlyError(e), { tone: 'error' })
+              }
+            }}
+          >
+            <Smartphone size={17} /> Usar TuBodega en este teléfono
+          </Button>
+        )}
       </Card>
 
       {(config?.pago_movil || config?.zelle || config?.binance) && (

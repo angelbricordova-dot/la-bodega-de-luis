@@ -1,34 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CloudDownload, Lock } from 'lucide-react'
-import { db, lastLocalChange } from '../db'
+import { Cloud, CloudOff, Loader2, Lock, RefreshCw } from 'lucide-react'
+import { db, lastLocalChange, onLocalChange } from '../db'
 import { refreshLicense, setAccount, signOut, useAccount, useLicenseState } from '../lib/account'
 import { supabase } from '../lib/cloud'
-import { findCloudBackup, lastCloudBackup, restoreCloudBackup, uploadCloudBackup } from '../lib/backup'
+import { lastCloudBackup, uploadCloudBackup } from '../lib/backup'
 import { periodStart } from '../lib/sales'
-import { Button, Sheet, confirmDialog, cx, toast } from './ui'
+import { startSync, syncNow, useSync } from '../lib/sync'
+import { cx, toast } from './ui'
 
 const HEARTBEAT_MS = 10 * 60 * 1000
-const BACKUP_MIN_GAP = 5 * 60 * 1000
-export const FRESH_KEY = 'tubodega-fresh'
-/** Mientras exista, no se sube respaldo: evita pisar el de la nube con un teléfono vacío */
-const HOLD_KEY = 'tubodega-hold-backup'
-
-const hold = (on: boolean) => {
-  try {
-    if (on) localStorage.setItem(HOLD_KEY, '1')
-    else localStorage.removeItem(HOLD_KEY)
-  } catch {
-    /* nada */
-  }
-}
-const isHeld = () => {
-  try {
-    return localStorage.getItem(HOLD_KEY) === '1'
-  } catch {
-    return false
-  }
-}
+/** El respaldo en archivo es un seguro aparte de la sincronización: como mucho uno cada 6 horas */
+const BACKUP_GAP = 6 * 60 * 60 * 1000
 
 async function collectStats() {
   const day = periodStart('hoy')
@@ -43,32 +26,42 @@ async function collectStats() {
     ventas_mes: sales.length,
     total_mes: Math.round(sales.reduce((a, s) => a + s.total, 0) * 100) / 100,
     ultima_venta: last?.createdAt ? new Date(last.createdAt).toISOString() : null,
-    version: '1.1',
+    version: '1.2',
   }
 }
 
-/** Mantiene la licencia al día y respalda los datos en la nube, sin estorbar */
+/** Mantiene la licencia al día, sincroniza con los otros teléfonos y respalda en la nube */
 export function CloudSync() {
   const account = useAccount((s) => s.account)
   const storeId = account?.mode === 'store' ? account.storeId : null
-  const [restore, setRestore] = useState<{ path: string; updatedAt: string } | null>(null)
-  const [restoring, setRestoring] = useState(false)
+  const firstLoad = useSync((s) => s.firstLoad)
+  const notice = useSync((s) => s.notice)
   const busy = useRef(false)
 
   useEffect(() => {
-    if (!storeId) return
-    let alive = true
+    if (notice) {
+      toast(notice, { tone: 'info' })
+      useSync.setState({ notice: '' })
+    }
+  }, [notice])
 
-    const backupIfNeeded = async (force = false) => {
-      const changed = lastLocalChange() > lastCloudBackup()
-      if (isHeld() || !changed || (!force && Date.now() - lastCloudBackup() < BACKUP_MIN_GAP)) return
+  // Ventas, inventario y fiados compartidos entre teléfonos
+  useEffect(() => {
+    if (!storeId) return
+    return startSync(storeId, onLocalChange)
+  }, [storeId])
+
+  // Licencia, cierre de sesión remoto y respaldo
+  useEffect(() => {
+    if (!storeId) return
+    const backupIfNeeded = async () => {
+      if (lastLocalChange() <= lastCloudBackup() || Date.now() - lastCloudBackup() < BACKUP_GAP) return
       try {
         await uploadCloudBackup(storeId)
       } catch (e) {
         console.warn('Respaldo falló', e)
       }
     }
-
     const tick = async () => {
       if (busy.current || !navigator.onLine) return
       busy.current = true
@@ -89,100 +82,72 @@ export function CloudSync() {
         if (acc?.mode === 'store') {
           if (acc.sessionRev == null) setAccount({ ...acc, sessionRev: lic.sessionRev ?? 0 })
           else if ((lic.sessionRev ?? 0) !== acc.sessionRev) {
-            await backupIfNeeded(true)
+            await syncNow(storeId).catch(() => {})
             toast('El administrador cerró la sesión en este teléfono.', { tone: 'error' })
             setTimeout(() => signOut(), 1500)
             return
           }
         }
-        let fresh = false
-        try {
-          fresh = sessionStorage.getItem(FRESH_KEY) === '1'
-          sessionStorage.removeItem(FRESH_KEY)
-        } catch {
-          /* nada */
-        }
-        if (fresh || isHeld()) {
-          const found = await findCloudBackup(storeId)
-          if (found && alive) {
-            hold(true)
-            setRestore(found)
-            return
-          }
-          hold(false)
-        }
         await backupIfNeeded()
       } catch (e) {
-        console.warn('Sincronización falló', e)
+        console.warn('Licencia no se pudo confirmar', e)
       } finally {
         busy.current = false
       }
     }
-
     tick()
     const timer = setInterval(tick, HEARTBEAT_MS)
-    const onOnline = () => tick()
-    const onHide = () => document.visibilityState === 'hidden' && navigator.onLine && backupIfNeeded(true)
-    window.addEventListener('online', onOnline)
-    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('online', tick)
     return () => {
-      alive = false
       clearInterval(timer)
-      window.removeEventListener('online', onOnline)
-      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('online', tick)
     }
   }, [storeId])
 
-  if (!restore || !storeId) return null
+  if (!firstLoad) return null
   return (
-    <Sheet open onClose={() => {}} title="Encontramos tus datos">
-      <div className="flex gap-3 p-4 rounded-2xl bg-brand-50 text-brand-800">
-        <CloudDownload size={22} className="shrink-0" />
-        <p className="text-sm">
-          Hay un respaldo de tu bodega en la nube del {restore.updatedAt ? new Date(restore.updatedAt).toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' }) : 'último uso'}. ¿Quieres
-          traerlo a este teléfono?
-        </p>
-      </div>
-      <div className="grid grid-cols-2 gap-3 mt-5">
-        <Button
-          variant="outline"
-          onClick={async () => {
-            const ok = await confirmDialog('¿Empezar vacío?', {
-              text: 'El respaldo de la nube se reemplazará con los datos de este teléfono la próxima vez que se respalde.',
-              ok: 'Empezar vacío',
-              danger: true,
-            })
-            if (!ok) return
-            hold(false)
-            setRestore(null)
-          }}
-        >
-          Empezar vacío
-        </Button>
-        <Button
-          disabled={restoring}
-          onClick={async () => {
-            setRestoring(true)
-            try {
-              await restoreCloudBackup(restore.path)
-              hold(false)
-              toast('Datos restaurados')
-              setRestore(null)
-            } catch (e) {
-              toast('No se pudo restaurar: ' + (e as Error).message, { tone: 'error' })
-            } finally {
-              setRestoring(false)
-            }
-          }}
-        >
-          {restoring ? 'Restaurando…' : 'Restaurar'}
-        </Button>
-      </div>
-    </Sheet>
+    <div className="fixed inset-0 z-[80] bg-canvas/95 backdrop-blur flex flex-col items-center justify-center text-center px-8">
+      <Loader2 size={40} className="text-brand-500 animate-spin" />
+      <p className="text-lg font-bold mt-4">Descargando los datos de tu bodega…</p>
+      <p className="text-sm text-muted mt-1">Productos, ventas y fiados de los otros teléfonos. Solo pasa la primera vez.</p>
+    </div>
   )
 }
 
-/** Franja con el estado del plan cuando hace falta avisar algo */
+/** Estado de la sincronización, para el encabezado */
+export function SyncBadge() {
+  const account = useAccount((s) => s.account)
+  const { status, pending } = useSync()
+  if (account?.mode !== 'store') return null
+  const storeId = account.storeId
+  const label =
+    status === 'offline'
+      ? pending
+        ? `Sin internet · ${pending} por subir`
+        : 'Sin internet'
+      : status === 'syncing'
+        ? 'Sincronizando'
+        : status === 'error'
+          ? 'Error al sincronizar'
+          : pending
+            ? `${pending} por subir`
+            : 'Sincronizado'
+  const Icon = status === 'offline' ? CloudOff : status === 'syncing' ? RefreshCw : Cloud
+  return (
+    <button
+      onClick={() => syncNow(storeId)}
+      className={cx(
+        'inline-flex items-center gap-1 text-[10px] font-semibold',
+        status === 'error' ? 'text-red-500' : status === 'offline' ? 'text-amber-600' : 'text-muted',
+      )}
+      title="Sincronizar ahora"
+    >
+      <Icon size={11} className={status === 'syncing' ? 'animate-spin' : ''} />
+      {label}
+    </button>
+  )
+}
+
 export function LicenseBanner() {
   const nav = useNavigate()
   const l = useLicenseState()

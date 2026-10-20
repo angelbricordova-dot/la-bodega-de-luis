@@ -34,6 +34,7 @@ La app Funciona en el teléfono como una app instalada (PWA), **sin internet**, 
   - Anular tickets (el stock vuelve al inventario), reimprimir y repetir una venta.
 - **Fiados:** cuaderno de deudores con abonos y recordatorio por WhatsApp.
 - **Caja:** apertura con fondo en $ y Bs, y cierre con el conteo y la diferencia contra lo esperado.
+- **Varios teléfonos (TuBodega con cuenta):** productos, ventas, fiados y caja se comparten entre los teléfonos de la bodega en tiempo real, y funciona sin internet.
 - **Ajustes:** negocio y logo, pagos, impresión, clientes, vendedores, categorías, compras a proveedores, finanzas (ganancia neta, gastos, lo más vendido), respaldo y restauración, y PIN de administrador.
 
 ## Desarrollo

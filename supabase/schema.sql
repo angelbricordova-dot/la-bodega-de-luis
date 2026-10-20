@@ -65,6 +65,33 @@ create table if not exists public.payments (
 create index if not exists payments_store_idx on public.payments (store_id, created_at desc);
 create index if not exists payments_status_idx on public.payments (status);
 
+-- Teléfonos de cada bodega (el plan Básico permite 1 a la vez)
+create table if not exists public.store_devices (
+  store_id uuid not null references public.stores (id) on delete cascade,
+  device_id text not null,
+  name text,
+  user_id uuid,
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  primary key (store_id, device_id)
+);
+
+-- Sincronización entre teléfonos: una fila por cada registro de la bodega
+-- (producto, venta, fiado...). seq crece con cada cambio para saber qué falta bajar.
+create sequence if not exists public.sync_seq;
+create table if not exists public.sync_rows (
+  store_id uuid not null references public.stores (id) on delete cascade,
+  tbl text not null,
+  row_id text not null,
+  data jsonb,
+  deleted boolean not null default false,
+  device text,
+  seq bigint not null default nextval('public.sync_seq'),
+  updated_at timestamptz not null default now(),
+  primary key (store_id, tbl, row_id)
+);
+create index if not exists sync_rows_seq_idx on public.sync_rows (store_id, seq);
+
 create table if not exists public.app_config (
   id int primary key default 1 check (id = 1),
   pago_movil text,
@@ -123,6 +150,16 @@ alter table public.stores enable row level security;
 alter table public.profiles enable row level security;
 alter table public.payments enable row level security;
 alter table public.app_config enable row level security;
+alter table public.store_devices enable row level security;
+alter table public.sync_rows enable row level security;
+
+drop policy if exists store_devices_select on public.store_devices;
+create policy store_devices_select on public.store_devices for select to authenticated
+  using (store_id = public.my_store_id() or public.is_admin());
+
+drop policy if exists sync_rows_select on public.sync_rows;
+create policy sync_rows_select on public.sync_rows for select to authenticated
+  using (store_id = public.my_store_id());
 
 drop policy if exists admins_select on public.admins;
 create policy admins_select on public.admins for select to authenticated using (user_id = auth.uid());
@@ -147,41 +184,115 @@ create policy app_config_update on public.app_config for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
 -- Nadie escribe directo en stores/profiles/payments: todo pasa por las funciones de abajo.
-revoke insert, update, delete on public.stores, public.profiles, public.payments, public.admins from anon, authenticated;
-revoke all on public.stores, public.profiles, public.payments, public.admins, public.app_config from anon;
+revoke insert, update, delete on public.stores, public.profiles, public.payments, public.admins, public.store_devices, public.sync_rows from anon, authenticated;
+revoke all on public.stores, public.profiles, public.payments, public.admins, public.app_config, public.store_devices, public.sync_rows from anon;
 
 -- ---------------------------------------------------------------------
 -- Funciones para la app de la bodega
 -- ---------------------------------------------------------------------
 
--- Estado de la licencia de quien está conectado
-create or replace function public.get_license() returns jsonb
+-- Estado de la licencia de quien está conectado.
+-- device_ok: en el plan Básico solo el teléfono activo más antiguo puede vender.
+drop function if exists public.get_license();
+create or replace function public.get_license(p_device text default null) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
   s public.stores;
   pr public.profiles;
+  first_dev text;
+  active int := 0;
 begin
   select * into s from public.stores where id = public.my_store_id();
   select * into pr from public.profiles where user_id = auth.uid();
+  if s.id is not null then
+    select count(*) into active from public.store_devices
+     where store_id = s.id and last_seen_at > now() - interval '7 days';
+    select device_id into first_dev from public.store_devices
+     where store_id = s.id and last_seen_at > now() - interval '7 days'
+     order by created_at limit 1;
+  end if;
   return jsonb_build_object(
     'server_now', now(),
     'is_admin', public.is_admin(),
     'role', pr.role,
     'session_rev', coalesce(pr.session_rev, 0),
+    'devices_active', active,
+    'device_ok', s.id is null or s.plan = 'pro' or p_device is null or first_dev is null or first_dev = p_device,
     'store', case when s.id is null then null else public.store_json(s) end
   );
 end;
 $$;
 
--- La app avisa que está viva, manda sus números y recibe la licencia
-create or replace function public.heartbeat(p_stats jsonb default '{}'::jsonb) returns jsonb
+-- La app avisa que está viva, registra el teléfono, manda sus números y recibe la licencia
+drop function if exists public.heartbeat(jsonb);
+create or replace function public.heartbeat(p_stats jsonb default '{}'::jsonb, p_device text default null, p_device_name text default null)
+returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
+declare
+  sid uuid := public.my_store_id();
 begin
   update public.stores
      set last_seen_at = now(),
          stats = coalesce(p_stats, '{}'::jsonb)
-   where id = public.my_store_id();
-  return public.get_license();
+   where id = sid;
+  if sid is not null and p_device is not null then
+    insert into public.store_devices (store_id, device_id, name, user_id)
+    values (sid, left(p_device, 40), left(p_device_name, 80), auth.uid())
+    on conflict (store_id, device_id) do update
+      set last_seen_at = now(), name = coalesce(excluded.name, store_devices.name), user_id = auth.uid();
+  end if;
+  return public.get_license(p_device);
+end;
+$$;
+
+-- "Usar TuBodega en este teléfono": los demás teléfonos quedan en solo lectura (plan Básico)
+create or replace function public.claim_primary_device(p_device text) returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  sid uuid := public.my_store_id();
+begin
+  if sid is null then
+    raise exception 'sin_bodega';
+  end if;
+  delete from public.store_devices where store_id = sid and device_id <> p_device;
+  update public.store_devices set created_at = now() - interval '1 second' where store_id = sid and device_id = p_device;
+  return public.get_license(p_device);
+end;
+$$;
+
+create or replace function public.unregister_device(p_device text) returns void
+language sql volatile security definer set search_path = public as $$
+  delete from public.store_devices where store_id = public.my_store_id() and device_id = p_device;
+$$;
+
+-- Subir cambios de este teléfono. Cada fila: {"t": tabla, "id": clave, "d": datos, "del": borrado}
+create or replace function public.sync_push(p_device text, p_rows jsonb) returns bigint
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  sid uuid := public.my_store_id();
+begin
+  if sid is null then
+    raise exception 'sin_bodega';
+  end if;
+  if jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) > 500 then
+    raise exception 'lote_invalido';
+  end if;
+  insert into public.sync_rows as sr (store_id, tbl, row_id, data, deleted, device, seq, updated_at)
+  select sid, r ->> 't', r ->> 'id',
+         case when coalesce((r ->> 'del')::boolean, false) then null else r -> 'd' end,
+         coalesce((r ->> 'del')::boolean, false), left(p_device, 40), nextval('public.sync_seq'), now()
+    from (
+      -- si el mismo registro viene dos veces en el lote, gana la última versión
+      select distinct on (e.r ->> 't', e.r ->> 'id') e.r
+        from jsonb_array_elements(p_rows) with ordinality as e (r, ord)
+       order by e.r ->> 't', e.r ->> 'id', e.ord desc
+    ) x (r)
+   where r ->> 't' in ('categories', 'products', 'customers', 'sellers', 'sales', 'quotes', 'debtPayments',
+                       'stockMoves', 'cashSessions', 'purchases', 'expenses', 'settings')
+     and coalesce(r ->> 'id', '') <> ''
+  on conflict (store_id, tbl, row_id) do update
+    set data = excluded.data, deleted = excluded.deleted, device = excluded.device, seq = excluded.seq, updated_at = now();
+  return coalesce((select max(seq) from public.sync_rows where store_id = sid), 0);
 end;
 $$;
 
@@ -410,6 +521,15 @@ begin
 end;
 $$;
 
+-- Quitar un teléfono de una bodega (cambio de teléfono, teléfono perdido)
+create or replace function public.admin_remove_device(p_store uuid, p_device text) returns void
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform public.require_admin();
+  delete from public.store_devices where store_id = p_store and device_id = p_device;
+end;
+$$;
+
 -- Desvincular un usuario de su bodega (teléfono perdido, empleado que se fue)
 create or replace function public.admin_remove_member(p_user uuid) returns void
 language plpgsql volatile security definer set search_path = public as $$
@@ -422,7 +542,9 @@ $$;
 -- Permisos de ejecución
 revoke execute on all functions in schema public from anon, public;
 grant execute on function
-  public.get_license(), public.heartbeat(jsonb), public.claim_store(text),
+  public.get_license(text), public.heartbeat(jsonb, text, text), public.claim_store(text),
+  public.claim_primary_device(text), public.unregister_device(text), public.sync_push(text, jsonb),
+  public.admin_remove_device(uuid, text),
   public.report_payment(numeric, numeric, text, text, text, int), public.mark_backup(),
   public.admin_create_store(text, text, text, text, numeric, int, text), public.admin_update_store(uuid, jsonb),
   public.admin_extend(uuid, int), public.admin_review_payment(uuid, boolean, text),
@@ -431,6 +553,17 @@ grant execute on function
   public.admin_force_logout(uuid),
   public.is_admin(), public.my_store_id()
 to authenticated;
+
+-- Avisos en tiempo real cuando otro teléfono sube cambios
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'sync_rows') then
+    alter publication supabase_realtime add table public.sync_rows;
+  end if;
+exception when undefined_object then
+  null;
+end;
+$$;
 
 -- ---------------------------------------------------------------------
 -- Respaldos en la nube (Storage): carpeta por bodega

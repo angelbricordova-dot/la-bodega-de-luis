@@ -119,7 +119,8 @@ export async function initStoreDb(business: { name: string; rif?: string | null;
       phone: business.phone ?? '',
     },
   })
-  await db.categories.bulkAdd(CATEGORIES)
+  // _seed: si la bodega ya tiene datos en la nube, estas categorías de arranque se descartan
+  await db.categories.bulkAdd(CATEGORIES.map((c) => ({ ...c, _seed: true })))
   return true
 }
 

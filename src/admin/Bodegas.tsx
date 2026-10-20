@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Ban, CalendarPlus, Copy, KeyRound, LogOut, MessageCircle, Phone, Plus, RotateCcw, Save, Search, Store, Trash2, UserX } from 'lucide-react'
+import { ArrowLeft, Ban, CalendarPlus, Copy, KeyRound, LogOut, MessageCircle, Phone, Smartphone, Plus, RotateCcw, Save, Search, Store, Trash2, UserX } from 'lucide-react'
 import { Badge, Button, Card, Chip, Empty, Field, Input, Segmented, Sheet, TextArea, confirmDialog, cx, toast } from '../components/ui'
 import { friendlyError, emailToLogin, supabase } from '../lib/cloud'
 import type { LicenseMode } from '../lib/license'
@@ -176,6 +176,11 @@ export function BodegaDetalle({ onChange }: { onChange: () => void }) {
     if (error) throw error
     return data as { user_id: string; email: string; role: string; last_sign_in_at: string | null }[]
   }, [id])
+  const devices = useLoad(async () => {
+    const { data, error } = await supabase.from('store_devices').select('device_id, name, created_at, last_seen_at').eq('store_id', id).order('created_at')
+    if (error) throw error
+    return data as { device_id: string; name: string | null; created_at: string; last_seen_at: string }[]
+  }, [id])
   const [recording, setRecording] = useState(false)
   const store = stores?.find((s) => s.id === id)
   if (!stores) return <AdminPage title="Cargando…">{null}</AdminPage>
@@ -191,6 +196,7 @@ export function BodegaDetalle({ onChange }: { onChange: () => void }) {
     reload()
     payments.reload()
     members.reload()
+    devices.reload()
     onChange()
   }
 
@@ -323,6 +329,45 @@ export function BodegaDetalle({ onChange }: { onChange: () => void }) {
               </Button>
             </div>
           ))}
+        </Card>
+
+        <Card className="p-4">
+          <p className="font-bold flex items-center gap-2">
+            <Smartphone size={17} /> Teléfonos
+          </p>
+          <p className="text-sm text-muted mt-1">
+            {store.plan === 'pro' ? 'Plan Pro: puede vender desde todos.' : 'Plan Básico: solo el primero activo puede vender. Quita el viejo si cambió de teléfono.'}
+          </p>
+          {devices.data?.length === 0 && <p className="text-sm text-muted mt-2">Todavía no se ha conectado ningún teléfono.</p>}
+          {(() => {
+            const active = (devices.data ?? []).filter((d) => Date.now() - new Date(d.last_seen_at).getTime() < 7 * 864e5)
+            const primary = active[0]?.device_id
+            return devices.data?.map((d) => {
+              const isActive = active.some((a) => a.device_id === d.device_id)
+              const canSell = store.plan === 'pro' ? isActive : d.device_id === primary
+              return (
+                <div key={d.device_id} className="flex items-center gap-2 py-2 border-t border-line first:border-0 mt-1">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{d.name || 'Teléfono'}</p>
+                    <p className="text-xs text-muted">{lastSeenText(d.last_seen_at)}</p>
+                  </div>
+                  <Badge tone={canSell ? 'green' : isActive ? 'amber' : 'gray'}>{canSell ? 'Vende' : isActive ? 'Solo lectura' : 'Inactivo'}</Badge>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-red-500"
+                    aria-label="Quitar teléfono"
+                    onClick={async () =>
+                      (await confirmDialog(`¿Quitar ${d.name || 'este teléfono'}?`, { text: 'Deja de contar para el plan. Si se vuelve a abrir la app en él, se registra de nuevo.', ok: 'Quitar', danger: true })) &&
+                      call(() => supabase.rpc('admin_remove_device', { p_store: store.id, p_device: d.device_id }), 'Teléfono quitado')
+                    }
+                  >
+                    <Trash2 size={15} />
+                  </Button>
+                </div>
+              )
+            })
+          })()}
         </Card>
 
         <EditStore store={store} onSaved={() => { reload(); onChange() }} />

@@ -73,4 +73,8 @@ Si al abrir la app no aparece la pantalla de TuBodega para entrar con usuario y 
 - **Demo:** desde tu panel, **Ajustes → Abrir demo de ventas** muestra la app con productos de ejemplo para tus visitas, sin tocar los datos de ningún cliente.
 - **Clave olvidada:** en tu panel, abre la bodega → **Usuarios → Clave**.
 - **Cerrar sesión:** cada usuario tiene el botón al final de **Ajustes**. Desde tu panel también puedes cerrar la sesión de cualquier usuario a distancia (bodega → **Usuarios** → botón de salida). Se cierra en sus teléfonos en máximo 10 minutos si tienen internet.
-- **Varios teléfonos:** por ahora cada teléfono guarda sus propias ventas; no se juntan entre teléfonos. Cada teléfono respalda en su propia carpeta para que no se pisen.
+- **Varios teléfonos:** todos los teléfonos de una bodega comparten productos, ventas, fiados, clientes y caja al momento. El stock se calcula con los movimientos de todos los teléfonos, así que cuadra aunque dos vendan a la vez. Cada teléfono conserva su propia configuración de impresora.
+- **Sin internet:** cada teléfono sigue vendiendo y sube sus cambios cuando vuelve la conexión. El encabezado muestra "Sincronizado", "N por subir" o "Sin internet".
+- **Plan Básico = 1 teléfono:** si se abre en un segundo teléfono, ese queda en solo lectura. Desde **Mi plan → Usar TuBodega en este teléfono** se cambia cuál vende. En tu panel ves los teléfonos de cada bodega y puedes quitarlos. El plan Pro permite todos los que quieran.
+- **Teléfono nuevo:** al entrar, baja solo todos los datos de la bodega.
+- **Número de ticket:** si dos teléfonos venden al mismo tiempo sin internet, los dos pueden darle el mismo número al ticket. No se pierde ninguna venta; solo coincide el número.

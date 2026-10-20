@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { cloudEnabled, loginToEmail, supabase } from './cloud'
 import { licenseState, type CachedLicense, type StoreInfo } from './license'
-import { lastCloudBackup, uploadCloudBackup } from './backup'
+import { deviceId, lastCloudBackup, uploadCloudBackup } from './backup'
 import { lastLocalChange } from '../db'
 
 /**
@@ -76,19 +76,21 @@ interface LicenseResponse {
   is_admin: boolean
   role: 'owner' | 'seller' | null
   session_rev?: number
+  device_ok?: boolean
+  devices_active?: number
   store: StoreInfo | null
 }
 
 function toCached(r: LicenseResponse): CachedLicense {
   const now = Date.now()
-  return { store: r.store, isAdmin: r.is_admin, role: r.role, sessionRev: r.session_rev ?? 0, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
+  return { store: r.store, isAdmin: r.is_admin, role: r.role, sessionRev: r.session_rev ?? 0, deviceOk: r.device_ok ?? true, devicesActive: r.devices_active ?? 0, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
 }
 
 /** Pregunta al servidor el estado del plan (y le manda los números del día) */
 export async function refreshLicense(stats?: Record<string, unknown>): Promise<CachedLicense> {
   const { data, error } = stats
-    ? await supabase.rpc('heartbeat', { p_stats: stats })
-    : await supabase.rpc('get_license')
+    ? await supabase.rpc('heartbeat', { p_stats: stats, p_device: deviceId(), p_device_name: deviceName() })
+    : await supabase.rpc('get_license', { p_device: deviceId() })
   if (error) throw error
   const lic = toCached(data as LicenseResponse)
   setLicense(lic)
@@ -99,6 +101,26 @@ export async function loadProviderConfig() {
   const { data } = await supabase.from('app_config').select('pago_movil, zelle, binance, whatsapp').eq('id', 1).maybeSingle()
   if (data) setConfig(data)
   return data as ProviderConfig | null
+}
+
+/** Nombre del teléfono para reconocerlo en el panel (ej: "SM-A515F · Android 13") */
+export function deviceName() {
+  const ua = navigator.userAgent
+  const m = ua.match(/Android ([\d.]+); ([^;)]+)/)
+  if (m) return `${m[2].replace(/ Build.*/, '').trim()} · Android ${m[1]}`
+  if (/iPhone/.test(ua)) return 'iPhone'
+  if (/Windows/.test(ua)) return 'Computadora Windows'
+  if (/Mac OS/.test(ua)) return 'Mac'
+  return 'Teléfono'
+}
+
+/** "Usar TuBodega en este teléfono": los otros teléfonos quedan en solo lectura (plan Básico) */
+export async function claimThisDevice() {
+  const { data, error } = await supabase.rpc('claim_primary_device', { p_device: deviceId() })
+  if (error) throw error
+  const lic = toCached(data as LicenseResponse)
+  setLicense(lic)
+  return lic
 }
 
 /** Decide a dónde va la cuenta después de entrar */
@@ -150,9 +172,12 @@ export async function signOut() {
 /** Cierra sesión subiendo antes un último respaldo si hay cambios sin respaldar */
 export async function signOutSafely() {
   const acc = useAccount.getState().account
-  if (acc?.mode === 'store' && navigator.onLine && lastLocalChange() > lastCloudBackup()) {
+  if (acc?.mode === 'store' && navigator.onLine) {
     try {
-      await uploadCloudBackup(acc.storeId)
+      const { syncNow } = await import('./sync')
+      await syncNow(acc.storeId)
+      if (lastLocalChange() > lastCloudBackup()) await uploadCloudBackup(acc.storeId)
+      await supabase.rpc('unregister_device', { p_device: deviceId() })
     } catch {
       /* se cierra igual: los datos siguen en el teléfono */
     }
@@ -178,7 +203,7 @@ export function backToAdmin() {
 export function currentLicense() {
   const { account, license } = useAccount.getState()
   if (!cloudEnabled || account?.mode !== 'store' || !license?.store) return null
-  return licenseState(license.store, Date.now() + license.offset, license.checkedAt)
+  return licenseState(license.store, Date.now() + license.offset, license.checkedAt, license.deviceOk ?? true)
 }
 
 export function canSellNow() {
@@ -189,5 +214,5 @@ export function canSellNow() {
 export function useLicenseState() {
   const { account, license } = useAccount()
   if (!cloudEnabled || account?.mode !== 'store' || !license?.store) return null
-  return licenseState(license.store, Date.now() + license.offset, license.checkedAt)
+  return licenseState(license.store, Date.now() + license.offset, license.checkedAt, license.deviceOk ?? true)
 }

@@ -80,6 +80,7 @@ export const MODE_LABEL: Record<LicenseMode, string> = {
   vencida: 'Vencida',
   suspendida: 'Suspendida',
   conectar: 'Sin conexión',
+  dispositivo: 'Otro teléfono',
 }
 
 export const MODE_TONE: Record<LicenseMode, 'green' | 'amber' | 'red' | 'gray' | 'indigo'> = {
@@ -90,6 +91,7 @@ export const MODE_TONE: Record<LicenseMode, 'green' | 'amber' | 'red' | 'gray' |
   vencida: 'red',
   suspendida: 'red',
   conectar: 'gray',
+  dispositivo: 'amber',
 }
 
 export function storeMode(s: AdminStore) {
