@@ -1,13 +1,15 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Cloud, CloudOff, Loader2, Lock, RefreshCw } from 'lucide-react'
+import { Cloud, CloudOff, FileCheck2, Loader2, Lock, RefreshCw } from 'lucide-react'
 import { db, lastLocalChange, onLocalChange } from '../db'
-import { refreshLicense, setAccount, signOut, useAccount, useLicenseState } from '../lib/account'
+import { acceptTerms, refreshLicense, setAccount, signOut, useAccount, useLicenseState } from '../lib/account'
+import { TERMS_VERSION } from '../lib/legal'
 import { supabase } from '../lib/cloud'
 import { lastCloudBackup, uploadCloudBackup } from '../lib/backup'
 import { periodStart } from '../lib/sales'
 import { startSync, syncNow, useSync } from '../lib/sync'
-import { cx, toast } from './ui'
+import { Button, cx, toast } from './ui'
+import { friendlyError } from '../lib/cloud'
 
 const HEARTBEAT_MS = 10 * 60 * 1000
 /** El respaldo en archivo es un seguro aparte de la sincronización: como mucho uno cada 6 horas */
@@ -104,12 +106,54 @@ export function CloudSync() {
     }
   }, [storeId])
 
-  if (!firstLoad) return null
+  if (!firstLoad) return <TermsGate />
   return (
     <div className="fixed inset-0 z-[80] bg-canvas/95 backdrop-blur flex flex-col items-center justify-center text-center px-8">
       <Loader2 size={40} className="text-brand-500 animate-spin" />
       <p className="text-lg font-bold mt-4">Descargando los datos de tu bodega…</p>
       <p className="text-sm text-muted mt-1">Productos, ventas y fiados de los otros teléfonos. Solo pasa la primera vez.</p>
+    </div>
+  )
+}
+
+/** Pide aceptar los Términos a quien activó antes de que existieran o cuando cambian */
+function TermsGate() {
+  const account = useAccount((s) => s.account)
+  const version = useAccount((s) => s.license?.termsVersion)
+  const [busy, setBusy] = useState(false)
+  // undefined: el servidor todavía no informa la versión (esquema viejo), no se pide nada
+  if (account?.mode !== 'store' || version === undefined || version === TERMS_VERSION) return null
+  return (
+    <div className="fixed inset-0 z-[85] bg-ink/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
+      <div className="w-full max-w-md rounded-3xl bg-surface p-5 animate-sheet">
+        <span className="size-12 rounded-2xl bg-brand-50 text-brand-700 grid place-items-center">
+          <FileCheck2 size={24} />
+        </span>
+        <p className="font-extrabold text-xl mt-3">Términos de TuBodega</p>
+        <p className="text-sm text-muted mt-1.5">
+          Para seguir usando la app, lee y acepta los{' '}
+          <a href="/legal/terminos" target="_blank" className="font-semibold text-brand-700 underline">Términos y condiciones</a> y la{' '}
+          <a href="/legal/privacidad" target="_blank" className="font-semibold text-brand-700 underline">Política de privacidad</a>. Resumen: pagas mes a mes, tus datos son tuyos y el ticket es una nota de entrega sin valor fiscal.
+        </p>
+        <Button
+          size="lg"
+          className="w-full mt-4"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true)
+            try {
+              await acceptTerms()
+              toast('Gracias. Ya puedes seguir.')
+            } catch (e) {
+              toast(friendlyError(e), { tone: 'error' })
+            } finally {
+              setBusy(false)
+            }
+          }}
+        >
+          Leí y acepto
+        </Button>
+      </div>
     </div>
   )
 }

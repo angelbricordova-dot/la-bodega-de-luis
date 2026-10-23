@@ -19,6 +19,17 @@ const root = ReactDOM.createRoot(document.getElementById('root')!)
 const render = (el: React.ReactNode) => root.render(<React.StrictMode>{el}</React.StrictMode>)
 
 async function boot() {
+  // Páginas públicas: presentación para clientes y textos legales (sin iniciar sesión)
+  const path = location.pathname.replace(/\/+$/, '')
+  if (path === '/conocer') {
+    const { default: Conocer } = await import('./public/Conocer')
+    return render(<Conocer />)
+  }
+  if (path === '/legal' || path.startsWith('/legal/')) {
+    const { default: Legal } = await import('./public/Legal')
+    return render(<Legal doc={path.split('/')[2]} />)
+  }
+
   // Sin Supabase configurado: la app funciona como antes, todo en el teléfono
   if (!cloudEnabled && !localModeAllowed) return render(<ConfigError />)
   if (!cloudEnabled) {

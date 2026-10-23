@@ -256,8 +256,7 @@ function PayLine({ label, value }: { label: string; value: string }) {
 }
 
 function ReferralCard({ code, storeName }: { code: string; storeName: string }) {
-  const config = useAccount((s) => s.config)
-  const text = `¡Hola! En ${storeName} usamos TuBodega para las ventas, el inventario y los fiados. Si te anotas con mi código ${code} te dan la instalación a mitad de precio.${config?.whatsapp ? ` Escríbeles: https://wa.me/${config.whatsapp.replace(/\D/g, '').replace(/^0/, '58')}` : ''}`
+  const text = `¡Hola! En ${storeName} usamos TuBodega para las ventas, el inventario y los fiados. Si te anotas con mi código ${code} te dan la instalación a mitad de precio. Mírala aquí: ${location.origin}/conocer?ref=${code}`
   return (
     <Card className="p-4">
       <p className="font-bold flex items-center gap-2">

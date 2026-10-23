@@ -103,6 +103,32 @@ create table if not exists public.app_config (
   updated_at timestamptz not null default now()
 );
 insert into public.app_config (id) values (1) on conflict (id) do nothing;
+-- Datos del responsable que salen en los Términos y la Política de Privacidad
+alter table public.app_config add column if not exists legal_name text;
+alter table public.app_config add column if not exists legal_id text;
+alter table public.app_config add column if not exists legal_email text;
+alter table public.app_config add column if not exists legal_city text;
+
+-- Aceptación de los Términos y la Política de Privacidad (qué versión y cuándo)
+alter table public.profiles add column if not exists terms_version text;
+alter table public.profiles add column if not exists terms_accepted_at timestamptz;
+
+-- Prospectos: los negocios que visitas para venderles TuBodega (solo los ve el admin)
+create table if not exists public.leads (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  contact text,
+  phone text,
+  zone text,
+  status text not null default 'nuevo'
+    check (status in ('nuevo', 'visitado', 'interesado', 'demo', 'prueba', 'cliente', 'perdido')),
+  next_at date,
+  notes text,
+  store_id uuid references public.stores (id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists leads_status_idx on public.leads (status, next_at);
 
 -- ---------------------------------------------------------------------
 -- Funciones de apoyo
@@ -154,6 +180,10 @@ alter table public.payments enable row level security;
 alter table public.app_config enable row level security;
 alter table public.store_devices enable row level security;
 alter table public.sync_rows enable row level security;
+alter table public.leads enable row level security;
+
+drop policy if exists leads_select on public.leads;
+create policy leads_select on public.leads for select to authenticated using (public.is_admin());
 
 drop policy if exists store_devices_select on public.store_devices;
 create policy store_devices_select on public.store_devices for select to authenticated
@@ -186,8 +216,8 @@ create policy app_config_update on public.app_config for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
 -- Nadie escribe directo en stores/profiles/payments: todo pasa por las funciones de abajo.
-revoke insert, update, delete on public.stores, public.profiles, public.payments, public.admins, public.store_devices, public.sync_rows from anon, authenticated;
-revoke all on public.stores, public.profiles, public.payments, public.admins, public.app_config, public.store_devices, public.sync_rows from anon;
+revoke insert, update, delete on public.stores, public.profiles, public.payments, public.admins, public.store_devices, public.sync_rows, public.leads from anon, authenticated;
+revoke all on public.stores, public.profiles, public.payments, public.admins, public.app_config, public.store_devices, public.sync_rows, public.leads from anon;
 
 -- ---------------------------------------------------------------------
 -- Funciones para la app de la bodega
@@ -218,6 +248,7 @@ begin
     'is_admin', public.is_admin(),
     'role', pr.role,
     'session_rev', coalesce(pr.session_rev, 0),
+    'terms_version', pr.terms_version,
     'devices_active', active,
     'device_ok', s.id is null or s.plan = 'pro' or p_device is null or first_dev is null or first_dev = p_device,
     'store', case when s.id is null then null else public.store_json(s) end
@@ -298,8 +329,10 @@ begin
 end;
 $$;
 
--- Vincular la cuenta recién creada con su bodega usando el código de activación
-create or replace function public.claim_store(p_code text) returns jsonb
+-- Vincular la cuenta recién creada con su bodega usando el código de activación.
+-- p_terms: versión de los Términos que la persona aceptó al activar.
+drop function if exists public.claim_store(text);
+create or replace function public.claim_store(p_code text, p_terms text default null) returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
 declare
   sid uuid;
@@ -315,8 +348,9 @@ begin
   if sid is null then
     raise exception 'codigo_invalido';
   end if;
-  insert into public.profiles (user_id, store_id, role)
-  values (auth.uid(), sid, case when exists (select 1 from public.profiles where store_id = sid) then 'seller' else 'owner' end);
+  insert into public.profiles (user_id, store_id, role, terms_version, terms_accepted_at)
+  values (auth.uid(), sid, case when exists (select 1 from public.profiles where store_id = sid) then 'seller' else 'owner' end,
+          left(p_terms, 20), case when p_terms is null then null else now() end);
   update public.stores set activation_code = null where id = sid;
   return public.get_license();
 end;
@@ -343,6 +377,20 @@ begin
   returning id into pid;
   return pid;
 end;
+$$;
+
+-- Aceptar la versión vigente de los Términos (usuarios que activaron antes de que existieran)
+create or replace function public.accept_terms(p_version text) returns void
+language sql volatile security definer set search_path = public as $$
+  update public.profiles set terms_version = left(p_version, 20), terms_accepted_at = now() where user_id = auth.uid();
+$$;
+
+-- Datos públicos para la página de presentación y las páginas legales (sin iniciar sesión)
+create or replace function public.public_info() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('whatsapp', whatsapp, 'legal_name', legal_name, 'legal_id', legal_id,
+                            'legal_email', legal_email, 'legal_city', legal_city)
+    from public.app_config where id = 1;
 $$;
 
 create or replace function public.mark_backup() returns void
@@ -541,10 +589,85 @@ begin
 end;
 $$;
 
+-- Borrar para siempre una bodega dada de baja o suspendida: sus usuarios, teléfonos,
+-- pagos y datos sincronizados. Los respaldos de Storage los borra el panel antes de llamar aquí.
+-- p_name debe ser el nombre exacto de la bodega, para evitar borrar otra por error.
+create or replace function public.admin_delete_store(p_id uuid, p_name text) returns void
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  s public.stores;
+begin
+  perform public.require_admin();
+  select * into s from public.stores where id = p_id;
+  if s.id is null then
+    raise exception 'bodega_no_existe';
+  end if;
+  if s.status not in ('suspended', 'cancelled') then
+    raise exception 'primero_suspender';
+  end if;
+  if trim(coalesce(p_name, '')) <> trim(s.name) then
+    raise exception 'nombre_no_coincide';
+  end if;
+  -- Las cuentas de sus usuarios (nunca la de un admin)
+  begin
+    delete from auth.users
+     where id in (select user_id from public.profiles where store_id = p_id)
+       and id not in (select user_id from public.admins);
+  exception when insufficient_privilege then
+    null;
+  end;
+  -- profiles, payments, store_devices y sync_rows se borran en cascada
+  delete from public.stores where id = p_id;
+end;
+$$;
+
+-- Guardar un prospecto (nuevo si no trae id)
+create or replace function public.admin_save_lead(p jsonb) returns public.leads
+language plpgsql volatile security definer set search_path = public as $$
+declare
+  l public.leads;
+begin
+  perform public.require_admin();
+  if coalesce(trim(p ->> 'name'), '') = '' then
+    raise exception 'falta_nombre';
+  end if;
+  if p ? 'id' and p ->> 'id' is not null then
+    update public.leads set
+      name = trim(p ->> 'name'),
+      contact = p ->> 'contact',
+      phone = p ->> 'phone',
+      zone = p ->> 'zone',
+      status = coalesce(p ->> 'status', status),
+      next_at = nullif(p ->> 'next_at', '')::date,
+      notes = p ->> 'notes',
+      store_id = case when p ? 'store_id' then nullif(p ->> 'store_id', '')::uuid else store_id end,
+      updated_at = now()
+    where id = (p ->> 'id')::uuid
+    returning * into l;
+  else
+    insert into public.leads (name, contact, phone, zone, status, next_at, notes, store_id)
+    values (trim(p ->> 'name'), p ->> 'contact', p ->> 'phone', p ->> 'zone', coalesce(p ->> 'status', 'nuevo'),
+            nullif(p ->> 'next_at', '')::date, p ->> 'notes', nullif(p ->> 'store_id', '')::uuid)
+    returning * into l;
+  end if;
+  return l;
+end;
+$$;
+
+create or replace function public.admin_delete_lead(p_id uuid) returns void
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform public.require_admin();
+  delete from public.leads where id = p_id;
+end;
+$$;
+
 -- Permisos de ejecución
 revoke execute on all functions in schema public from anon, public;
 grant execute on function
-  public.get_license(text), public.heartbeat(jsonb, text, text), public.claim_store(text),
+  public.get_license(text), public.heartbeat(jsonb, text, text), public.claim_store(text, text),
+  public.accept_terms(text), public.admin_delete_store(uuid, text),
+  public.admin_save_lead(jsonb), public.admin_delete_lead(uuid),
   public.claim_primary_device(text), public.unregister_device(text), public.sync_push(text, jsonb),
   public.admin_remove_device(uuid, text),
   public.report_payment(numeric, numeric, text, text, text, int), public.mark_backup(),
@@ -555,6 +678,7 @@ grant execute on function
   public.admin_force_logout(uuid),
   public.is_admin(), public.my_store_id()
 to authenticated;
+grant execute on function public.public_info() to anon, authenticated;
 
 -- Avisos en tiempo real cuando otro teléfono sube cambios
 do $$
@@ -586,6 +710,11 @@ drop policy if exists backups_update on storage.objects;
 create policy backups_update on storage.objects for update to authenticated
   using (bucket_id = 'backups' and (storage.foldername(name))[1] = public.my_store_id()::text)
   with check (bucket_id = 'backups' and (storage.foldername(name))[1] = public.my_store_id()::text);
+
+-- El admin puede borrar los respaldos de una bodega cuando la elimina
+drop policy if exists backups_delete on storage.objects;
+create policy backups_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'backups' and public.is_admin());
 
 -- ---------------------------------------------------------------------
 -- Tu usuario administrador.

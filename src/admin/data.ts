@@ -57,6 +57,48 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []) {
   return { data, error, loading, reload }
 }
 
+export type LeadStatus = 'nuevo' | 'visitado' | 'interesado' | 'demo' | 'prueba' | 'cliente' | 'perdido'
+
+export interface Lead {
+  id: string
+  name: string
+  contact: string | null
+  phone: string | null
+  zone: string | null
+  status: LeadStatus
+  next_at: string | null
+  notes: string | null
+  store_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export const LEAD_STATUS: { value: LeadStatus; label: string; tone: 'green' | 'amber' | 'red' | 'gray' | 'indigo' | 'purple' }[] = [
+  { value: 'nuevo', label: 'Por visitar', tone: 'gray' },
+  { value: 'visitado', label: 'Visitado', tone: 'indigo' },
+  { value: 'interesado', label: 'Interesado', tone: 'purple' },
+  { value: 'demo', label: 'Vio la demo', tone: 'amber' },
+  { value: 'prueba', label: 'En prueba', tone: 'indigo' },
+  { value: 'cliente', label: 'Cliente', tone: 'green' },
+  { value: 'perdido', label: 'No por ahora', tone: 'red' },
+]
+
+export async function fetchLeads(): Promise<Lead[]> {
+  const { data, error } = await supabase.from('leads').select('*').order('next_at', { ascending: true, nullsFirst: false }).order('updated_at', { ascending: false })
+  if (error) throw error
+  return data as Lead[]
+}
+
+/** Fecha local de hoy en formato AAAA-MM-DD */
+export function todayIso() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function isDue(l: Lead) {
+  return !!l.next_at && l.next_at <= todayIso() && l.status !== 'cliente' && l.status !== 'perdido'
+}
+
 export async function fetchStores(): Promise<AdminStore[]> {
   const { data, error } = await supabase.from('stores').select('*').order('name')
   if (error) throw error
@@ -119,4 +161,18 @@ export function waLink(phone: string | null | undefined, text: string) {
 
 export function activationMessage(store: AdminStore, code: string) {
   return `¡Hola${store.owner_name ? ' ' + store.owner_name : ''}! Ya está lista tu cuenta de TuBodega para ${store.name}.\n\n1. Abre ${location.origin}/?codigo=${code} en Chrome.\n2. Toca "Activar bodega", crea tu usuario y tu clave.\n3. Tu código de activación es: *${code}*\n\nDespués toca ⋮ → "Instalar app" para tenerla en la pantalla.`
+}
+
+/** Descarga una tabla como CSV que Excel abre bien (separador ; y acentos) */
+export function downloadCsv(name: string, header: string[], rows: unknown[][]) {
+  const cell = (v: unknown) => {
+    const t = v == null ? '' : typeof v === 'number' ? String(v).replace('.', ',') : String(v)
+    return /[;"\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t
+  }
+  const csv = '\ufeff' + [header, ...rows].map((r) => r.map(cell).join(';')).join('\r\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  a.download = name
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000)
 }

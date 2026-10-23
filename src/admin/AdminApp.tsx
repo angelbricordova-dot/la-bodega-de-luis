@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { NavLink, Route, Routes, useNavigate } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, Clock, CreditCard, DollarSign, LayoutDashboard, Plus, Settings, Store, Users, WifiOff } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Clock, CreditCard, DollarSign, LayoutDashboard, Plus, Settings, Store, Target, Users, WifiOff } from 'lucide-react'
 import { Logo } from '../components/AuthScreen'
 import { Badge, Card, ConfirmHost, Toaster, cx } from '../components/ui'
 import { signOut } from '../lib/account'
@@ -8,8 +8,9 @@ import { supabase } from '../lib/cloud'
 import { usd } from '../lib/money'
 import { Bodegas, BodegaDetalle } from './Bodegas'
 import { Pagos } from './Pagos'
+import { Prospectos } from './Prospectos'
 import { AdminAjustes } from './AdminAjustes'
-import { MODE_LABEL, MODE_TONE, daysSince, fetchPayments, fetchStores, storeMode, useLoad } from './data'
+import { MODE_LABEL, MODE_TONE, daysSince, fetchLeads, fetchPayments, fetchStores, isDue, storeMode, useLoad } from './data'
 
 export function AdminPage({ title, right, children }: { title: string; right?: ReactNode; children: ReactNode }) {
   return (
@@ -31,6 +32,7 @@ export function AdminPage({ title, right, children }: { title: string; right?: R
 const NAV = [
   { to: '/admin', label: 'Resumen', icon: LayoutDashboard },
   { to: '/admin/bodegas', label: 'Bodegas', icon: Store },
+  { to: '/admin/prospectos', label: 'Prospectos', icon: Target },
   { to: '/admin/pagos', label: 'Pagos', icon: CreditCard },
   { to: '/admin/ajustes', label: 'Ajustes', icon: Settings },
 ]
@@ -38,7 +40,7 @@ const NAV = [
 function AdminNav({ pending }: { pending: number }) {
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur border-t border-line pb-safe">
-      <div className="max-w-2xl mx-auto grid grid-cols-4 h-16">
+      <div className="max-w-2xl mx-auto grid grid-cols-5 h-16">
         {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === '/admin'} className="flex flex-col items-center justify-center gap-0.5 relative">
             {({ isActive }) => (
@@ -78,6 +80,7 @@ export default function AdminApp() {
         <Route path="/admin" element={<Resumen pendingCount={pending.data?.length ?? 0} />} />
         <Route path="/admin/bodegas" element={<Bodegas />} />
         <Route path="/admin/bodegas/:id" element={<BodegaDetalle onChange={pending.reload} />} />
+        <Route path="/admin/prospectos" element={<Prospectos />} />
         <Route path="/admin/pagos" element={<Pagos onChange={pending.reload} />} />
         <Route path="/admin/ajustes" element={<AdminAjustes />} />
         <Route path="*" element={<Resumen pendingCount={pending.data?.length ?? 0} />} />
@@ -92,6 +95,9 @@ export default function AdminApp() {
 function Resumen({ pendingCount }: { pendingCount: number }) {
   const nav = useNavigate()
   const { data: stores, error } = useLoad(fetchStores, [])
+  // Si el esquema todavía no tiene la tabla de prospectos, simplemente no se muestran
+  const leads = useLoad(() => fetchLeads().catch(() => []), [])
+  const dueLeads = (leads.data ?? []).filter(isDue)
   const list = stores ?? []
   const withMode = list.map((s) => ({ s, l: storeMode(s) }))
   const paying = withMode.filter(({ s, l }) => s.status === 'active' && ['activa', 'aviso', 'gracia'].includes(l.mode))
@@ -101,7 +107,8 @@ function Resumen({ pendingCount }: { pendingCount: number }) {
   const overdue = withMode.filter(({ l }) => l.mode === 'vencida')
   const flagged = new Set([...dueSoon, ...overdue].map(({ s }) => s.id))
   const inactive = withMode.filter(({ s, l }) => !flagged.has(s.id) && l.canSell && (daysSince(s.last_seen_at) ?? 99) >= 3)
-  const salesMonth = list.reduce((a, s) => a + (s.stats?.total_mes ?? 0), 0)
+  // Las suspendidas y dadas de baja no cuentan en los totales
+  const salesMonth = list.filter((s) => s.status !== 'cancelled' && s.status !== 'suspended').reduce((a, s) => a + (s.stats?.total_mes ?? 0), 0)
 
   return (
     <AdminPage title="Resumen" right={<Logo className="scale-75 origin-right" />}>
@@ -126,13 +133,26 @@ function Resumen({ pendingCount }: { pendingCount: number }) {
 
       <Card className="p-4 mt-3 flex items-center justify-between">
         <div>
-          <p className="text-xs text-muted font-semibold">Vendido este mes en todas tus bodegas</p>
+          <p className="text-xs text-muted font-semibold">Vendido este mes en tus bodegas activas</p>
           <p className="text-xl font-extrabold tabular">{usd(salesMonth)}</p>
         </div>
-        <button onClick={() => nav('/admin/bodegas?nueva=1')} className="h-11 px-4 rounded-2xl bg-brand-500 text-white font-semibold flex items-center gap-1.5">
+        <button onClick={() => nav('/admin/bodegas?nueva=1')} className="h-11 px-4 rounded-2xl bg-brand-500 text-white font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0">
           <Plus size={18} /> Nueva bodega
         </button>
       </Card>
+
+      {dueLeads.length > 0 && (
+        <Card className="p-4 mt-3 flex items-center gap-3" onClick={() => nav('/admin/prospectos')}>
+          <span className="size-10 rounded-xl bg-amber-50 text-amber-600 grid place-items-center">
+            <Target size={19} />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold">{dueLeads.length} prospecto{dueLeads.length > 1 ? 's' : ''} para hoy</p>
+            <p className="text-xs text-muted truncate">{dueLeads.map((l) => l.name).join(', ')}</p>
+          </div>
+          <ArrowRight size={16} className="text-muted" />
+        </Card>
+      )}
 
       <h2 className="font-bold mt-6 mb-2">Requieren atención</h2>
       <div className="space-y-2">

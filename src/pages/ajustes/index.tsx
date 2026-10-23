@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { BadgeCheck, LogOut, Briefcase, CreditCard, FolderTree, HardDrive, Headphones, LineChart, Printer, Settings, ShieldCheck, ShoppingBasket, UserCog, Users, Vault } from 'lucide-react'
+import { BadgeCheck, LogOut, Briefcase, Scale, CreditCard, FolderTree, HardDrive, Headphones, LineChart, Printer, Settings, ShieldCheck, ShoppingBasket, UserCog, Users, Vault } from 'lucide-react'
 import { Page, PageHeader } from '../../components/Layout'
 import { Button, Card, Input, confirmDialog } from '../../components/ui'
 import { useSettings } from '../../lib/hooks'
@@ -17,6 +17,7 @@ import Avanzado from './Avanzado'
 import Admin from './Admin'
 import Soporte from './Soporte'
 import MiPlan from './MiPlan'
+import LegalPrivacidad from './LegalPrivacidad'
 import { BUILD, cloudEnabled, emailToLogin } from '../../lib/cloud'
 import { backToAdmin, signOutSafely, useAccount } from '../../lib/account'
 
@@ -34,6 +35,7 @@ const SECTIONS: { key: string; label: string; icon: typeof Settings; color: stri
   { key: 'caja', label: 'Historial caja', icon: Vault, color: '#15803d', el: () => <Caja /> },
   { key: 'avanzado', label: 'Respaldo', icon: HardDrive, color: '#64748b', el: () => <Avanzado />, protect: true },
   { key: 'admin', label: 'Admin', icon: ShieldCheck, color: '#d97706', el: () => <Admin />, protect: true },
+  { key: 'legal', label: 'Legal y privacidad', icon: Scale, color: '#475569', el: () => <LegalPrivacidad /> },
 ]
 
 let unlocked = false

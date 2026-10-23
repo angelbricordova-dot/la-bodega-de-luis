@@ -23,6 +23,8 @@ export interface CachedLicense {
   role?: 'owner' | 'seller' | null
   /** Sube cuando el admin cierra la sesión de este usuario */
   sessionRev?: number
+  /** Versión de los Términos que aceptó este usuario */
+  termsVersion?: string | null
   /** En el plan Básico, si este teléfono es el habilitado para vender */
   deviceOk?: boolean
   devicesActive?: number

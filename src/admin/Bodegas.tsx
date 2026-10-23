@@ -68,8 +68,15 @@ export function Bodegas() {
       </div>
       {params.get('nueva') && (
         <NuevaBodega
+          initial={{ name: params.get('nombre') ?? '', owner: params.get('dueno') ?? '', phone: params.get('tel') ?? '' }}
           onClose={() => setParams({})}
-          onCreated={(id) => {
+          onCreated={async (id) => {
+            // Si viene de un prospecto, queda vinculado y "En prueba"
+            const leadId = params.get('lead')
+            if (leadId) {
+              const { data: lead } = await supabase.from('leads').select('*').eq('id', leadId).maybeSingle()
+              if (lead) await supabase.rpc('admin_save_lead', { p: { ...lead, status: 'prueba', store_id: id } })
+            }
             reload()
             nav(`/admin/bodegas/${id}?nueva=1`)
           }}
@@ -88,10 +95,10 @@ function Mini({ label, value }: { label: string; value: string }) {
   )
 }
 
-function NuevaBodega({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
-  const [name, setName] = useState('')
-  const [owner, setOwner] = useState('')
-  const [phone, setPhone] = useState('')
+function NuevaBodega({ initial, onClose, onCreated }: { initial: { name: string; owner: string; phone: string }; onClose: () => void; onCreated: (id: string) => void }) {
+  const [name, setName] = useState(initial.name)
+  const [owner, setOwner] = useState(initial.owner)
+  const [phone, setPhone] = useState(initial.phone)
   const [plan, setPlan] = useState<'basico' | 'pro'>('basico')
   const [price, setPrice] = useState('10')
   const [trial, setTrial] = useState('7')
@@ -397,6 +404,20 @@ export function BodegaDetalle({ onChange }: { onChange: () => void }) {
           ))}
         </Card>
 
+        {(store.status === 'cancelled' || store.status === 'suspended') && (
+          <Card className="p-4 border-red-100 bg-red-50/60">
+            <p className="font-bold text-red-700 flex items-center gap-2">
+              <Trash2 size={17} /> Borrar para siempre
+            </p>
+            <p className="text-sm text-red-700/80 mt-1">
+              Borra la bodega, sus usuarios, teléfonos, pagos, respaldos y todos sus datos en la nube. Desaparece de tus totales. No se puede deshacer.
+            </p>
+            <Button variant="danger" className="w-full mt-3" onClick={() => deleteForever(store, () => { onChange(); nav('/admin/bodegas', { replace: true }) })}>
+              <Trash2 size={16} /> Borrar {store.name}
+            </Button>
+          </Card>
+        )}
+
         {store.status !== 'cancelled' && (
           <Button
             variant="ghost"
@@ -424,6 +445,38 @@ export function BodegaDetalle({ onChange }: { onChange: () => void }) {
       )}
     </AdminPage>
   )
+}
+
+/** Borra los respaldos de Storage y luego la bodega con todo lo suyo */
+async function deleteForever(store: AdminStore, done: () => void) {
+  const typed = prompt(`Para borrar "${store.name}" para siempre, escribe su nombre exacto:`)
+  if (typed == null) return
+  if (typed.trim() !== store.name.trim()) return toast('El nombre no coincide. No se borró nada.', { tone: 'error' })
+  try {
+    const bucket = supabase.storage.from('backups')
+    const paths: string[] = []
+    const { data: top, error: listError } = await bucket.list(store.id, { limit: 1000 })
+    if (listError) throw listError
+    for (const item of top ?? []) {
+      if (item.id) {
+        paths.push(`${store.id}/${item.name}`)
+        continue
+      }
+      // Carpeta de un teléfono: latest.json.gz y dia-N
+      const { data: files } = await bucket.list(`${store.id}/${item.name}`, { limit: 1000 })
+      for (const f of files ?? []) paths.push(`${store.id}/${item.name}/${f.name}`)
+    }
+    if (paths.length) {
+      const { error } = await bucket.remove(paths)
+      if (error) throw error
+    }
+    const { error } = await supabase.rpc('admin_delete_store', { p_id: store.id, p_name: typed })
+    if (error) throw error
+    toast(`${store.name} se borró`)
+    done()
+  } catch (e) {
+    toast(friendlyError(e), { tone: 'error' })
+  }
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

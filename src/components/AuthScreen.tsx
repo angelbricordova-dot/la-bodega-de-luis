@@ -3,6 +3,7 @@ import { KeyRound, LogIn, Store } from 'lucide-react'
 import { activate, refreshLicense, setAccount, signIn } from '../lib/account'
 import { BUILD, friendlyError, supabase } from '../lib/cloud'
 import { Button, Field, Input, Segmented } from './ui'
+import { StorageNotice } from '../public/PublicShell'
 
 export function Logo({ className = '' }: { className?: string }) {
   return (
@@ -25,6 +26,7 @@ export default function AuthScreen() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [needsCode, setNeedsCode] = useState(false)
+  const [agree, setAgree] = useState(false)
 
   const go = (to: string) => location.replace(to)
 
@@ -74,6 +76,7 @@ export default function AuthScreen() {
         if (password.length < 6) throw new Error('La clave debe tener al menos 6 caracteres.')
         if (password !== password2) throw new Error('Las claves no coinciden.')
       }
+      if (!agree) throw new Error('Para activar, acepta los Términos y la Política de privacidad.')
       const acc = await activate(code, login, password)
       if (acc) go('/')
     })
@@ -90,8 +93,9 @@ export default function AuthScreen() {
             <Field label="Código de activación">
               <Input icon={<KeyRound size={18} />} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} className="tracking-widest" />
             </Field>
+            <TermsCheck checked={agree} onChange={setAgree} />
             {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
-            <Button size="lg" className="w-full" disabled={busy || code.length < 6} onClick={onActivate}>
+            <Button size="lg" className="w-full" disabled={busy || code.length < 6 || !agree} onClick={onActivate}>
               Activar mi bodega
             </Button>
           </div>
@@ -132,8 +136,9 @@ export default function AuthScreen() {
                   <Input type="password" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} />
                 </Field>
               )}
+              {tab === 'activar' && <TermsCheck checked={agree} onChange={setAgree} />}
               {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
-              <Button size="lg" type="submit" className="w-full" disabled={busy || !login || !password || (tab === 'activar' && code.length < 6)}>
+              <Button size="lg" type="submit" className="w-full" disabled={busy || !login || !password || (tab === 'activar' && (code.length < 6 || !agree))}>
                 {busy ? 'Un momento…' : tab === 'entrar' ? 'Entrar' : 'Activar mi bodega'}
               </Button>
             </form>
@@ -142,8 +147,27 @@ export default function AuthScreen() {
       </div>
       <p className="text-center text-xs text-muted pb-6">
         ¿Olvidaste tu clave? Escríbele a quien te instaló la app.
-        <span className="block mt-1 opacity-60">Versión {BUILD}</span>
+        <span className="flex justify-center gap-3 mt-3 font-semibold">
+          <a href="/conocer">Conocer TuBodega</a>
+          <a href="/legal/terminos">Términos</a>
+          <a href="/legal/privacidad">Privacidad</a>
+        </span>
+        <span className="block mt-2 opacity-60">Versión {BUILD}</span>
       </p>
+      <StorageNotice />
     </div>
+  )
+}
+
+function TermsCheck({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-2.5 text-sm text-muted">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="size-5 mt-0.5 accent-[#2f9e6e] shrink-0" />
+      <span>
+        Acepto los{' '}
+        <a href="/legal/terminos" target="_blank" className="font-semibold text-brand-700 underline">Términos y condiciones</a> y la{' '}
+        <a href="/legal/privacidad" target="_blank" className="font-semibold text-brand-700 underline">Política de privacidad</a>. Entiendo que el ticket es una nota de entrega sin valor fiscal.
+      </span>
+    </label>
   )
 }

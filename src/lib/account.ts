@@ -3,6 +3,7 @@ import { cloudEnabled, loginToEmail, supabase } from './cloud'
 import { licenseState, type CachedLicense, type StoreInfo } from './license'
 import { deviceId, lastCloudBackup, uploadCloudBackup } from './backup'
 import { lastLocalChange } from '../db'
+import { TERMS_VERSION } from './legal'
 
 /**
  * Con qué cuenta se abrió la app en este teléfono:
@@ -76,6 +77,7 @@ interface LicenseResponse {
   is_admin: boolean
   role: 'owner' | 'seller' | null
   session_rev?: number
+  terms_version?: string | null
   device_ok?: boolean
   devices_active?: number
   store: StoreInfo | null
@@ -83,7 +85,7 @@ interface LicenseResponse {
 
 function toCached(r: LicenseResponse): CachedLicense {
   const now = Date.now()
-  return { store: r.store, isAdmin: r.is_admin, role: r.role, sessionRev: r.session_rev ?? 0, deviceOk: r.device_ok ?? true, devicesActive: r.devices_active ?? 0, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
+  return { store: r.store, isAdmin: r.is_admin, role: r.role, sessionRev: r.session_rev ?? 0, termsVersion: r.terms_version ?? null, deviceOk: r.device_ok ?? true, devicesActive: r.devices_active ?? 0, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
 }
 
 /** Pregunta al servidor el estado del plan (y le manda los números del día) */
@@ -148,7 +150,9 @@ export async function activate(code: string, login: string, password: string) {
     if (!data.session) throw new Error('Supabase pide confirmar el correo. Desactiva "Confirm email" en Authentication o usa un correo real y confírmalo.')
     sess = { session: data.session }
   }
-  const { data, error } = await supabase.rpc('claim_store', { p_code: code })
+  let { data, error } = await supabase.rpc('claim_store', { p_code: code, p_terms: TERMS_VERSION })
+  // Esquema viejo en Supabase (sin p_terms): activar igual
+  if (error?.code === 'PGRST202') ({ data, error } = await supabase.rpc('claim_store', { p_code: code }))
   if (error) throw error
   const lic = toCached(data as LicenseResponse)
   setLicense(lic)
@@ -215,4 +219,11 @@ export function useLicenseState() {
   const { account, license } = useAccount()
   if (!cloudEnabled || account?.mode !== 'store' || !license?.store) return null
   return licenseState(license.store, Date.now() + license.offset, license.checkedAt, license.deviceOk ?? true)
+}
+
+/** El usuario acepta la versión vigente de los Términos y la Política de Privacidad */
+export async function acceptTerms() {
+  const { error } = await supabase.rpc('accept_terms', { p_version: TERMS_VERSION })
+  if (error) throw error
+  return refreshLicense()
 }
