@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { LogOut, PlayCircle, Save } from 'lucide-react'
 import { Button, Card, Field, Input, TextArea, toast } from '../components/ui'
 import { enterDemo, setConfig, signOut, useAccount } from '../lib/account'
-import { friendlyError, supabase } from '../lib/cloud'
+import { BUILD, friendlyError, supabase } from '../lib/cloud'
 import { AdminPage } from './AdminApp'
 
 export function AdminAjustes() {
@@ -55,6 +55,7 @@ export function AdminAjustes() {
           <p className="text-sm">
             Sesión: <b>{email}</b>
           </p>
+          <p className="text-xs text-muted">Versión publicada: {BUILD}</p>
           <Button variant="danger" className="w-full" onClick={signOut}>
             <LogOut size={16} /> Cerrar sesión
           </Button>

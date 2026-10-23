@@ -5,7 +5,8 @@ import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import AuthScreen from './components/AuthScreen'
 import { openDb } from './db'
-import { cloudEnabled } from './lib/cloud'
+import { cloudEnabled, localModeAllowed } from './lib/cloud'
+import ConfigError from './components/ConfigError'
 import { useAccount } from './lib/account'
 import { initStoreDb, seedIfEmpty } from './lib/seed'
 import './index.css'
@@ -19,6 +20,7 @@ const render = (el: React.ReactNode) => root.render(<React.StrictMode>{el}</Reac
 
 async function boot() {
   // Sin Supabase configurado: la app funciona como antes, todo en el teléfono
+  if (!cloudEnabled && !localModeAllowed) return render(<ConfigError />)
   if (!cloudEnabled) {
     openDb('bodega')
     await seedIfEmpty()

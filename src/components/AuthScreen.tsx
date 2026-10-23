@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { KeyRound, LogIn, Store } from 'lucide-react'
 import { activate, refreshLicense, setAccount, signIn } from '../lib/account'
-import { friendlyError, supabase } from '../lib/cloud'
+import { BUILD, friendlyError, supabase } from '../lib/cloud'
 import { Button, Field, Input, Segmented } from './ui'
 
 export function Logo({ className = '' }: { className?: string }) {
@@ -140,7 +140,10 @@ export default function AuthScreen() {
           </>
         )}
       </div>
-      <p className="text-center text-xs text-muted pb-6">¿Olvidaste tu clave? Escríbele a quien te instaló la app.</p>
+      <p className="text-center text-xs text-muted pb-6">
+        ¿Olvidaste tu clave? Escríbele a quien te instaló la app.
+        <span className="block mt-1 opacity-60">Versión {BUILD}</span>
+      </p>
     </div>
   )
 }

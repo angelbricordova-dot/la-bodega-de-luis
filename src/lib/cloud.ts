@@ -3,8 +3,16 @@ import { createClient } from '@supabase/supabase-js'
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined
 
-/** Sin estas variables la app funciona como antes: solo en el teléfono, sin cuentas */
+/** Con las variables de Supabase la app pide cuenta, licencia y sincroniza */
 export const cloudEnabled = !!(url && key)
+
+/**
+ * Sin Supabase, la app solo funciona sin cuenta en desarrollo (npm run dev) o si se pide a propósito
+ * con VITE_LOCAL_MODE=1. Una publicación sin las variables muestra un aviso en vez de regalar la app.
+ */
+export const localModeAllowed = import.meta.env.DEV || import.meta.env.VITE_LOCAL_MODE === '1'
+
+export const BUILD = __BUILD__
 
 export const supabase = createClient(url || 'http://localhost', key || 'none', {
   auth: { persistSession: true, autoRefreshToken: true, storageKey: 'tubodega-auth' },

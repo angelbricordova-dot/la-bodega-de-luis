@@ -17,7 +17,7 @@ import Avanzado from './Avanzado'
 import Admin from './Admin'
 import Soporte from './Soporte'
 import MiPlan from './MiPlan'
-import { cloudEnabled, emailToLogin } from '../../lib/cloud'
+import { BUILD, cloudEnabled, emailToLogin } from '../../lib/cloud'
 import { backToAdmin, signOutSafely, useAccount } from '../../lib/account'
 
 const SECTIONS: { key: string; label: string; icon: typeof Settings; color: string; el: () => ReactNode; protect?: boolean }[] = [
@@ -93,7 +93,7 @@ export default function Ajustes() {
           ))}
         </div>
         <SessionCard />
-        <p className="text-center text-xs text-muted mt-6">TuBodega · v1.1 · Tus datos se guardan en este teléfono</p>
+        <p className="text-center text-xs text-muted mt-6">TuBodega · versión {BUILD} · Tus datos se guardan en este teléfono</p>
       </Page>
     </>
   )

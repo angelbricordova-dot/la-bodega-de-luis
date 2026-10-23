@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const BUILD = (process.env.VERCEL_GIT_COMMIT_SHA || '').slice(0, 7) || 'local'
+
 export default defineConfig({
   base: '/',
+  define: { __BUILD__: JSON.stringify(BUILD) },
   build: { chunkSizeWarningLimit: 700 },
   plugins: [
     react(),
