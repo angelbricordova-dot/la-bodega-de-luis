@@ -46,7 +46,8 @@ export default function RevisarOrden() {
   const [mix, setMix] = useState<MixRow[]>([])
   const [discount, setDiscount] = useState(cart.discountValue ? String(cart.discountValue) : '')
   const [finalPrice, setFinalPrice] = useState('')
-  const [pickCustomer, setPickCustomer] = useState(false)
+  // Desde dónde se abrió el selector: al elegir cliente desde "Crédito fiado", la venta queda fiada
+  const [pickCustomer, setPickCustomer] = useState<false | 'cliente' | 'fiado'>(false)
   const [libre, setLibre] = useState(false)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState<{ kind: 'sale'; data: Sale } | { kind: 'quote'; data: Quote } | null>(null)
@@ -219,7 +220,7 @@ export default function RevisarOrden() {
           <Field label="Notas / Observaciones">
             <TextArea value={cart.notes} onChange={(e) => cart.setNotes(e.target.value)} placeholder="Ej: entregar en la puerta, sin cebolla…" />
           </Field>
-          <button onClick={() => setPickCustomer(true)} className="w-full flex items-center gap-3 p-3 rounded-2xl border border-line text-left">
+          <button onClick={() => setPickCustomer('cliente')} className="w-full flex items-center gap-3 p-3 rounded-2xl border border-line text-left">
             <span className="size-10 rounded-xl bg-canvas grid place-items-center text-muted">
               <User size={18} />
             </span>
@@ -273,7 +274,7 @@ export default function RevisarOrden() {
                 })}
             </div>
             <button
-              onClick={() => (cart.customerId ? setMode('fiado') : setPickCustomer(true))}
+              onClick={() => (cart.customerId ? setMode('fiado') : setPickCustomer('fiado'))}
               className={cx(
                 'mt-2.5 w-full flex items-center gap-3 p-3 rounded-2xl border text-left transition',
                 mode === 'fiado' ? 'bg-fiado border-fiado text-white' : 'bg-fuchsia-50/50 border-fuchsia-100',
@@ -405,7 +406,14 @@ export default function RevisarOrden() {
         </div>
       </div>
 
-      <CustomerPicker open={pickCustomer} onClose={() => setPickCustomer(false)} onPick={(id) => cart.setCustomer(id)} />
+      <CustomerPicker
+        open={!!pickCustomer}
+        onClose={() => setPickCustomer(false)}
+        onPick={(id) => {
+          cart.setCustomer(id)
+          if (id != null && pickCustomer === 'fiado') setMode('fiado')
+        }}
+      />
       <VentaLibreSheet open={libre} onClose={() => setLibre(false)} />
     </>
   )

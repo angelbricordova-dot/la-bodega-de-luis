@@ -85,7 +85,7 @@ interface LicenseResponse {
 
 function toCached(r: LicenseResponse): CachedLicense {
   const now = Date.now()
-  return { store: r.store, isAdmin: r.is_admin, role: r.role, sessionRev: r.session_rev ?? 0, termsVersion: r.terms_version ?? null, deviceOk: r.device_ok ?? true, devicesActive: r.devices_active ?? 0, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
+  return { store: r.store, isAdmin: r.is_admin, role: r.role, sessionRev: r.session_rev ?? 0, termsVersion: 'terms_version' in r ? r.terms_version : undefined, deviceOk: r.device_ok ?? true, devicesActive: r.devices_active ?? 0, checkedAt: now, offset: new Date(r.server_now).getTime() - now }
 }
 
 /** Pregunta al servidor el estado del plan (y le manda los números del día) */
