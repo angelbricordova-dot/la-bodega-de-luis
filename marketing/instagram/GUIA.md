@@ -17,7 +17,7 @@ Todo lo necesario para abrir la cuenta y dejarla lista con sus primeras publicac
    7 días gratis 👇
    ```
 
-7. **Enlace:** `https://tubodega.vercel.app/conocer`
+7. **Enlace:** `https://tubodega-app.vercel.app/conocer`
 8. **Botón de WhatsApp:** Editar perfil → Opciones de contacto (o Botones de acción) → WhatsApp, con el número de WhatsApp Business.
 9. Ya existe la cuenta de TikTok o la de Facebook: enlázalas desde Centro de cuentas, para compartir los videos en las dos.
 

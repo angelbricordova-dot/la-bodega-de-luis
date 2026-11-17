@@ -170,7 +170,7 @@ export default function Conocer() {
           <Cta wa={wa} big />
         </div>
         {info.whatsapp && <p className="hidden print:block text-2xl font-extrabold mt-4">WhatsApp {info.whatsapp}</p>}
-        <p className="hidden print:block text-sm text-muted mt-1">{location.hostname === 'localhost' ? 'tubodega.vercel.app' : location.host}/conocer</p>
+        <p className="hidden print:block text-sm text-muted mt-1">{location.hostname === 'localhost' ? 'tubodega-app.vercel.app' : location.host}/conocer</p>
         <button onClick={() => window.print()} className="mt-4 text-sm font-semibold text-muted underline print:hidden">
           Guardar esta página en PDF o imprimirla
         </button>
