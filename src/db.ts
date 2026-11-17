@@ -411,7 +411,8 @@ export const DEFAULT_SETTINGS: Settings = {
     phone: '',
     footer: '¡Gracias por su compra!',
   },
-  rate: 36.5,
+  // Tasa BCV de respaldo (17/11/2026); la app pide actualizarla cada día
+  rate: 915.75,
   rateUpdatedAt: 0,
   showBs: true,
   enabledPayments: ['efectivo_usd', 'efectivo_bs', 'pago_movil', 'punto', 'zelle', 'biopago'],

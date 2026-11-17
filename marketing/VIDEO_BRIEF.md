@@ -81,7 +81,7 @@ Este archivo es todo el contexto para hacer los videos. Los guiones están en [G
 - **No inventes clientes, testimonios ni cifras** ("500 bodegas ya la usan", "aumenta tus ventas 30 %").
 - **No prometas cosas que no hace:** no acepta pagos con tarjeta en el teléfono ni se conecta al banco. Pago Móvil y punto se registran, no se cobran desde la app.
 - **Las marcas de los productos de ejemplo** (Harina PAN, Malta Polar, Coca-Cola…) son de terceros. Pueden verse de pasada en la pantalla, pero no las destaques, no las nombres en la voz y no uses sus logos.
-- **La tasa de las capturas es de ejemplo (36,50 Bs/$).** Antes de publicar, pide la tasa BCV del día y vuelve a capturar con `TASA=… node marketing/capture.mjs`, o evita los primeros planos de montos en bolívares.
+- **La tasa de las capturas es la BCV del 17 de noviembre de 2026 (915,75 Bs/$).** Si cambia mucho antes de publicar, vuelve a capturar con `TASA=… node marketing/capture.mjs`, o evita los primeros planos de montos en bolívares.
 
 ## Marca
 
@@ -124,7 +124,7 @@ npm run dev            # http://localhost:5173, en modo demo y sin cuenta (no ha
 En otra terminal:
 
 ```bash
-TASA=36.50 NEGOCIO="Bodega La Esquina" node marketing/capture.mjs
+TASA=915.75 NEGOCIO="Bodega La Esquina" node marketing/capture.mjs
 ```
 
 - Abre la app en Chromium como un teléfono de 390×844 a 3×.

@@ -7,7 +7,7 @@
  *
  * Variables opcionales:
  *   BASE_URL     dirección de la app (por defecto http://localhost:5173)
- *   TASA         tasa Bs/$ que se muestra en las pantallas (por defecto 36.50; pon la tasa BCV del día)
+ *   TASA         tasa Bs/$ que se muestra en las pantallas (por defecto 915.75; pon la tasa BCV del día)
  *   NEGOCIO      nombre de la bodega de ejemplo (por defecto "Bodega La Esquina")
  *   CHROME_PATH  ruta de Chromium si playwright no lo encuentra solo
  *   OUT          carpeta de salida (por defecto marketing/assets)
@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const BASE = process.env.BASE_URL || 'http://localhost:5173'
-const TASA = process.env.TASA || '36.50'
+const TASA = process.env.TASA || '915.75'
 const NEGOCIO = process.env.NEGOCIO || 'Bodega La Esquina'
 const OUT = path.resolve(process.env.OUT || path.join(ROOT, 'assets'))
 const SCREENS = path.join(OUT, 'screens')

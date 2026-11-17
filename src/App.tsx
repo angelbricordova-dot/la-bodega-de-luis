@@ -3,6 +3,7 @@ import { BottomNav } from './components/Layout'
 import { PickerHost } from './components/AddProductSheet'
 import { ConfirmHost, Toaster } from './components/ui'
 import { CloudSync, LicenseBanner } from './components/CloudSync'
+import { RateBanner } from './components/RateBanner'
 import Venta from './pages/Venta'
 import Catalogo from './pages/Catalogo'
 import Inventario from './pages/Inventario'
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <>
       {MAIN.includes(pathname) && <LicenseBanner />}
+      {(pathname === '/' || pathname === '/catalogo') && <RateBanner />}
       <Routes>
         <Route path="/" element={<Venta />} />
         <Route path="/catalogo" element={<Catalogo />} />

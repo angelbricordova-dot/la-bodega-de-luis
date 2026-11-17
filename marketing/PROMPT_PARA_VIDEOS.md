@@ -29,7 +29,7 @@ Reglas:
 - Nunca digas "factura" ni "SENIAT"; el ticket es una nota de entrega. No inventes testimonios ni cifras.
 - No destaques las marcas de los productos de ejemplo (Harina PAN, Polar…) ni las nombres en la voz.
 - El número de WhatsApp es [TU WHATSAPP]: pregúntamelo antes de exportar.
-- La tasa de las capturas (36,50 Bs/$) es de ejemplo: pregúntame la tasa BCV de hoy y vuelve a capturar con
+- La tasa de las capturas es la BCV del 17 de noviembre de 2026 (915,75 Bs/$). Si cambia mucho, pregúntame la tasa BCV de hoy y vuelve a capturar con
   TASA=<tasa> node marketing/capture.mjs (con npm run dev corriendo) antes de exportar las versiones finales.
 - Confírmame los precios antes de exportar.
 
