@@ -23,7 +23,6 @@ Todo para abrir la cuenta y publicar los primeros videos. Los videos están en [
    ```
 
    (cambia el usuario de Instagram por el que conseguiste). Cuando tengas el campo, pon el enlace de tu WhatsApp.
-8. **Correo de contacto:** el Gmail de TuBodega.
 
 ## 2. Los videos
 
