@@ -96,18 +96,18 @@ Agrega a cada texto el hashtag de tu ciudad (por ejemplo `#valencia` o `#caracas
 
 ## 3. Destacadas
 
-Para crear una destacada primero hay que subir una historia.
+Una destacada se arma con historias. Sube estas historias (en orden) y después, en el perfil, toca **Nueva** (el círculo con +), elige las de cada grupo, ponle el nombre y en **Editar portada** usa su portada.
 
-1. Sube como historias una captura de la app o la imagen de cada publicación: Precios, un pedazo de un tutorial, Preguntas y la de "Pruébala 7 días gratis".
-2. En el perfil toca **Nueva** (el círculo con +) y elige la historia.
-3. Ponle nombre y en **Editar portada** elige la imagen de portada:
+| Destacada | Historias, en orden | Portada |
+| --- | --- | --- |
+| Precios | `historias/precios-1-planes`, `precios-2-extras`, `precios-3-como-pagar` | `destacada-precios.png` |
+| Cómo usar | Los 5 videos de `marketing/tiktok/videos`: 01, 02, 03, 05 y 04 | `destacada-como-usar.png` |
+| Preguntas | `historias/preguntas-1` a `preguntas-5` | `destacada-preguntas.png` |
+| Prueba gratis | `historias/prueba-1-como-funciona`, `prueba-2-que-incluye`, `prueba-3-escribeme` | `destacada-prueba-gratis.png` |
 
-| Destacada | Portada |
-| --- | --- |
-| Precios | `destacada-precios.png` |
-| Cómo usar | `destacada-como-usar.png` |
-| Preguntas | `destacada-preguntas.png` |
-| Prueba gratis | `destacada-prueba-gratis.png` |
+**Enlace a tu WhatsApp:** en la última historia de "Precios" y en `prueba-3-escribeme`, antes de publicar toca el ícono de stickers → **Enlace** → pega tu enlace de WhatsApp (`https://wa.me/58…`) → escribe "Escríbeme" como texto del enlace. Ponlo en el espacio vacío de abajo.
+
+**Preguntas nuevas:** de vez en cuando sube una historia con el sticker **Preguntas** ("¿Qué te gustaría saber de TuBodega?"). Responde las mejores y agrégalas a la destacada.
 
 ## 4. Las primeras 48 horas
 
