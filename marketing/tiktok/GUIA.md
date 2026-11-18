@@ -14,8 +14,15 @@ Todo para abrir la cuenta y publicar los primeros videos. Los videos están en [
    App para bodegas 🛒 Ventas, fiados e inventario en $ y Bs · 7 días gratis 👇
    ```
 
-6. **Cuenta de empresa:** Perfil → ☰ → Configuración y privacidad → Cuenta → Cambiar a cuenta de empresa. Elige la categoría más parecida a software, aplicaciones o servicios profesionales.
-7. **Enlace:** Editar perfil → Sitio web. Pon el enlace directo de tu WhatsApp (`https://wa.me/58…?text=…`, el mismo de Google) o `https://tubodega-app.vercel.app/conocer`. Si no te aparece el campo, TikTok lo habilita más adelante: mientras tanto, la biografía dice "escríbenos" y el correo de contacto queda en el perfil.
+6. **Deja la cuenta personal.** Si TikTok te ofrece "Cuenta de empresa verificada", no la uses todavía: pide documentos legales y una dirección en países donde Venezuela no aparece. No pongas otro país ni datos falsos: TikTok puede cerrar la cuenta. La cuenta personal publica igual y además deja usar **todos** los sonidos en tendencia (las de empresa solo tienen música comercial).
+7. **Contacto en la biografía:** el campo Sitio web aparece en las cuentas personales al llegar a 1.000 seguidores. Mientras tanto, cambia la biografía por:
+
+   ```
+   App para bodegas 🛒 $ y Bs · 7 días gratis
+   Escríbenos por IG @tubodega.app 👇
+   ```
+
+   (cambia el usuario de Instagram por el que conseguiste). Cuando tengas el campo, pon el enlace de tu WhatsApp.
 8. **Correo de contacto:** el Gmail de TuBodega.
 
 ## 2. Los videos
