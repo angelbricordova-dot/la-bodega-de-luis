@@ -190,7 +190,7 @@ Empiezan con una situación de bodega, actuada o en texto, y terminan con la app
 | C2 | Precios | "¿Cuánto cuesta?" → $10 Básico / $18 Pro en pantalla → "menos que una malta al día" → WhatsApp |
 | C3 | Paquete Arranque | Impresora imprimiendo el ticket (`screens/24`) → "Instalación + impresora + primer mes: $75" |
 | C4 | Referidos | "¿Tienes un amigo con bodega?" → 1 mes gratis para ti, instalación a mitad de precio para él |
-| C5 | Plan Pro | "Tu bodega desde tu casa" → el dueño en otro lugar ve una venta del empleado (`screens/27` si existe, o texto) |
+| C5 | Plan Pro | "Tu bodega desde tu casa" → el dueño en otro lugar ve una venta del empleado (con texto en pantalla; no uses `screens/25` a `29`, que tienen la tasa vieja) |
 
 ### D. Presentación
 

@@ -37,6 +37,8 @@ App para bodegas y abastos de Venezuela 🇻🇪 Ventas, fiados e inventario en 
 Se llama TuBodega. Les cuento qué hace, cuánto cuesta y cómo me va 🧵
 ```
 
+(Adjunta la versión completa del video de presentación, la B horizontal o la A vertical.)
+
 ```
 2/ El problema: la mayoría de las bodegas lleva todo en un cuaderno.
 
@@ -53,7 +55,7 @@ Los fiados se olvidan, nadie sabe cuánto se ganó en el día y cada vez que sub
 🧾 Cuadre del día y cierre de caja
 ```
 
-(Adjunta el video `tiktok/01-cobrar-en-segundos.mp4`.)
+(Adjunta la versión corta del video de presentación, la C de `PROMPT_VIDEO_PRESENTACION.md`. Mientras no la tengas, usa `tiktok/01-cobrar-en-segundos.mp4`.)
 
 ```
 4/ Funciona sin internet. Si se va la señal o la luz del router, sigue vendiendo, y cuando vuelve el internet se respalda sola.
